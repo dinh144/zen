@@ -462,7 +462,7 @@ export function Board({
         ) : null}
       </header>
 
-      {top.length && mode === "everything" ? (
+      {top.length && mode === "everything" && !query.trim() ? (
         <section className="px-6 pb-8 sm:px-12">
           <h2 className="text-muted-foreground mb-5 text-[12px] tracking-[0.25em] lowercase">{t("board", "atHand")}</h2>
           <div className="flex gap-6 overflow-x-auto overflow-y-hidden pt-1 pb-4">
