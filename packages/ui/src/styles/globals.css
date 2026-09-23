@@ -1,0 +1,513 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+@source "../../../apps/**/*.{ts,tsx}";
+@source "../../../components/**/*.{ts,tsx}";
+@source "../**/*.{ts,tsx}";
+
+@theme inline {
+    --font-heading: var(--font-sans);
+    --color-sidebar-ring: var(--sidebar-ring);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar: var(--sidebar);
+    --color-chart-5: var(--chart-5);
+    --color-chart-4: var(--chart-4);
+    --color-chart-3: var(--chart-3);
+    --color-chart-2: var(--chart-2);
+    --color-chart-1: var(--chart-1);
+    --color-ring: var(--ring);
+    --color-input: var(--input);
+    --color-border: var(--border);
+    --color-destructive: var(--destructive);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-accent: var(--accent);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-muted: var(--muted);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-secondary: var(--secondary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-primary: var(--primary);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-popover: var(--popover);
+    --color-card-foreground: var(--card-foreground);
+    --color-card: var(--card);
+    --color-foreground: var(--foreground);
+    --color-background: var(--background);
+    --radius-sm: calc(var(--radius) * 0.6);
+    --radius-md: calc(var(--radius) * 0.8);
+    --radius-lg: var(--radius);
+    --radius-xl: calc(var(--radius) * 1.4);
+    --radius-2xl: calc(var(--radius) * 1.8);
+    --radius-3xl: calc(var(--radius) * 2.2);
+    --radius-4xl: calc(var(--radius) * 2.6);
+    --font-sans: var(--font-sans);
+}
+
+:root {
+    --background: oklch(1 0 0);
+    --foreground: oklch(0.145 0 0);
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.145 0 0);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.145 0 0);
+    --primary: oklch(0.205 0 0);
+    --primary-foreground: oklch(0.985 0 0);
+    --secondary: oklch(0.97 0 0);
+    --secondary-foreground: oklch(0.205 0 0);
+    --muted: oklch(0.97 0 0);
+    --muted-foreground: oklch(0.556 0 0);
+    --accent: oklch(0.97 0 0);
+    --accent-foreground: oklch(0.205 0 0);
+    --destructive: oklch(0.577 0.245 27.325);
+    --border: oklch(0.922 0 0);
+    --input: oklch(0.922 0 0);
+    --ring: oklch(0.708 0 0);
+    --chart-1: oklch(0.87 0 0);
+    --chart-2: oklch(0.556 0 0);
+    --chart-3: oklch(0.439 0 0);
+    --chart-4: oklch(0.371 0 0);
+    --chart-5: oklch(0.269 0 0);
+    --radius: 0.625rem;
+    --sidebar: oklch(0.985 0 0);
+    --sidebar-foreground: oklch(0.145 0 0);
+    --sidebar-primary: oklch(0.205 0 0);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-accent: oklch(0.97 0 0);
+    --sidebar-accent-foreground: oklch(0.205 0 0);
+    --sidebar-border: oklch(0.922 0 0);
+    --sidebar-ring: oklch(0.708 0 0);
+}
+
+.dark {
+    --background: oklch(0.145 0 0);
+    --foreground: oklch(0.985 0 0);
+    --card: oklch(0.205 0 0);
+    --card-foreground: oklch(0.985 0 0);
+    --popover: oklch(0.205 0 0);
+    --popover-foreground: oklch(0.985 0 0);
+    --primary: oklch(0.922 0 0);
+    --primary-foreground: oklch(0.205 0 0);
+    --secondary: oklch(0.269 0 0);
+    --secondary-foreground: oklch(0.985 0 0);
+    --muted: oklch(0.269 0 0);
+    --muted-foreground: oklch(0.708 0 0);
+    --accent: oklch(0.269 0 0);
+    --accent-foreground: oklch(0.985 0 0);
+    --destructive: oklch(0.704 0.191 22.216);
+    --border: oklch(1 0 0 / 10%);
+    --input: oklch(1 0 0 / 15%);
+    --ring: oklch(0.556 0 0);
+    --chart-1: oklch(0.87 0 0);
+    --chart-2: oklch(0.556 0 0);
+    --chart-3: oklch(0.439 0 0);
+    --chart-4: oklch(0.371 0 0);
+    --chart-5: oklch(0.269 0 0);
+    --sidebar: oklch(0.205 0 0);
+    --sidebar-foreground: oklch(0.985 0 0);
+    --sidebar-primary: oklch(0.488 0.243 264.376);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-accent: oklch(0.269 0 0);
+    --sidebar-accent-foreground: oklch(0.985 0 0);
+    --sidebar-border: oklch(1 0 0 / 10%);
+    --sidebar-ring: oklch(0.556 0 0);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+    }
+  body {
+    @apply bg-background text-foreground;
+    }
+  button:not(:disabled), [role="button"]:not(:disabled) {
+    cursor: pointer;
+    }
+}
+/* ---- zen: sumi-e on washi ----------------------------------------------
+   The name is 禅. Ink on paper, one vermilion seal, and ma — the empty space
+   that does the work. Paper is the default; dark is the same ink at night. */
+:root {
+  --background: #f4f1ea;
+  --foreground: #1a1a18;
+  --card: #fbf9f4;
+  --card-foreground: #1a1a18;
+  --popover: #fbf9f4;
+  --popover-foreground: #1a1a18;
+  /* The drop picker sets --ink-light / --ink-dark: each ink, already made legible per theme. */
+  --primary: var(--ink-light, #b23a2f);
+  --primary-foreground: #f8f5ee;
+  --secondary: #e7e1d4;
+  --secondary-foreground: #1a1a18;
+  --muted: #ece7dc;
+  --muted-foreground: #6f6a5f;
+  --accent: #e7e1d4;
+  --accent-foreground: #1a1a18;
+  --border: #ded7c8;
+  --input: #ded7c8;
+  --ring: var(--ink-light, #b23a2f);
+  --radius: 0.125rem;
+  --ink-wash: rgba(26, 26, 24, 0.06);
+  --paper-grain: 0.45;
+}
+
+.dark {
+  --background: #14120f;
+  --foreground: #efe9dc;
+  --card: #1c1a16;
+  --card-foreground: #efe9dc;
+  --popover: #1c1a16;
+  --popover-foreground: #efe9dc;
+  --primary: var(--ink-dark, #d3645a);
+  --primary-foreground: #14120f;
+  --secondary: #2a2621;
+  --secondary-foreground: #efe9dc;
+  --muted: #221f1a;
+  --muted-foreground: #948c7d;
+  --accent: #2a2621;
+  --accent-foreground: #efe9dc;
+  --border: #2c2821;
+  --input: #2c2821;
+  --ring: var(--ink-dark, #d3645a);
+  --ink-wash: rgba(239, 233, 220, 0.07);
+  --paper-grain: 0.12;
+}
+
+@theme inline {
+  --font-display: var(--font-display);
+  --font-sans: var(--font-sans);
+}
+
+/* English wears the Zen family; Vietnamese needs a face that carries its diacritics. */
+:root {
+  --font-display: var(--font-display-en);
+  --font-sans: var(--font-sans-en);
+}
+html[lang="vi"] {
+  --font-display: var(--font-display-vi);
+  --font-sans: var(--font-sans-vi);
+}
+
+/* Washi grain: fibre in the paper, not a texture image. */
+body {
+  position: relative;
+  background-color: var(--background);
+}
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: var(--paper-grain);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23g)' opacity='0.35'/%3E%3C/svg%3E");
+  mix-blend-mode: multiply;
+}
+.dark body::before { mix-blend-mode: soft-light; }
+body > * { position: relative; z-index: 1; }
+
+/* Ma: the board breathes. Columns are wide and the gutters are wider. */
+.masonry {
+  column-gap: 2.25rem;
+  column-count: 1;
+}
+@media (min-width: 640px) { .masonry { column-count: 2; } }
+@media (min-width: 1024px) { .masonry { column-count: 3; } }
+@media (min-width: 1536px) { .masonry { column-count: 4; } }
+.masonry.dense { column-count: 2; column-gap: 1.25rem; }
+@media (min-width: 1024px) { .masonry.dense { column-count: 4; } }
+@media (min-width: 1536px) { .masonry.dense { column-count: 6; } }
+.masonry > * {
+  break-inside: avoid;
+  margin-bottom: 2.25rem;
+}
+.masonry.dense > * { margin-bottom: 1.25rem; }
+
+/* A card is a sheet laid on the desk: hairline edge, one soft ink shadow. */
+.sheet {
+  background: var(--card);
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 0 var(--ink-wash);
+  transition: box-shadow 400ms cubic-bezier(0.22, 1, 0.36, 1), transform 400ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.sheet:hover {
+  box-shadow: 0 10px 30px -18px rgba(26, 26, 24, 0.55);
+  transform: translateY(-2px);
+}
+
+/* The vermilion seal: pinned cards are stamped, nothing else is. */
+.seal::after {
+  content: "";
+  position: absolute;
+  inset-inline-end: 0.75rem;
+  inset-block-start: 0.75rem;
+  width: 0.85rem;
+  height: 0.85rem;
+  border-radius: 2px;
+  background: var(--primary);
+  opacity: 0.9;
+}
+
+/* ---- the drop ----------------------------------------------------------
+   Everything moves like ink in water: it falls, it settles, it spreads. */
+.drop-wrap { position: relative; display: inline-block; }
+.drop-wrap > svg { display: block; }
+
+@keyframes drop-fall {
+  0% { transform: translateY(-140%) scaleY(1.25) scaleX(0.82); opacity: 0; }
+  55% { opacity: 1; }
+  72% { transform: translateY(0) scaleY(0.78) scaleX(1.2); }
+  86% { transform: translateY(0) scaleY(1.08) scaleX(0.95); }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+@keyframes drop-breathe {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-1.5px) scale(1.03); }
+}
+@keyframes ring-out {
+  0% { transform: translate(-50%, -50%) scale(0.35); opacity: 0.5; }
+  100% { transform: translate(-50%, -50%) scale(2.6); opacity: 0; }
+}
+
+.drop-wrap[data-motion="fall"] > svg { animation: drop-fall 1100ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+.drop-wrap[data-motion="idle"] > svg { animation: drop-breathe 4.5s ease-in-out infinite; }
+
+/* The ring spreads past its drop; a drop near the edge must not widen the page. */
+html, body { overflow-x: clip; }
+
+.drop-ring {
+  position: absolute;
+  top: 55%;
+  left: 50%;
+  width: 190%;
+  aspect-ratio: 1;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  opacity: 0;
+  pointer-events: none;
+}
+.drop-wrap:hover .drop-ring,
+a:hover .drop-ring,
+button:hover .drop-ring { animation: ring-out 700ms cubic-bezier(0.22, 1, 0.36, 1); }
+
+/* Cards arrive the way ink spreads on paper: from beneath, unhurried. */
+@keyframes settle-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+.settle { opacity: 0; }
+.settle.in { animation: settle-in 700ms cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+
+/* A saved card blooms once, like a drop hitting the page. */
+@keyframes ink-bloom {
+  0% { box-shadow: 0 0 0 0 color-mix(in oklch, var(--primary), transparent 55%); }
+  100% { box-shadow: 0 0 0 26px color-mix(in oklch, var(--primary), transparent 100%); }
+}
+.bloom { animation: ink-bloom 700ms cubic-bezier(0.22, 1, 0.36, 1); }
+
+/* The seal is pressed, not faded in. */
+@keyframes stamp {
+  0% { transform: scale(1.9) rotate(-8deg); opacity: 0; }
+  60% { transform: scale(0.92) rotate(1deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0); opacity: 0.9; }
+}
+.seal::after { animation: stamp 520ms cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+
+/* Drift: cards breathe on the spot, each on its own clock. */
+@keyframes adrift {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+.adrift { animation: adrift 9s ease-in-out infinite; }
+
+/* Letting go: the card lifts off the paper and fades. */
+@keyframes let-go {
+  to { opacity: 0; transform: translateY(-18px) scale(0.97); filter: blur(4px); }
+}
+.letting-go { animation: let-go 480ms cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+
+/* The search line fills with ink while you type. */
+@keyframes ink-line { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+.ink-line { transform-origin: left; animation: ink-line 500ms cubic-bezier(0.22, 1, 0.36, 1); }
+
+/* Reading progress: a column of ink down the left margin. */
+.read-progress {
+  position: fixed;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: 2px;
+  background: var(--primary);
+  transform-origin: top;
+  opacity: 0.55;
+}
+
+/* Something is thinking: a drop pulsing under the caption. */
+@keyframes pulse-drop {
+  0%, 100% { opacity: 0.35; transform: scale(0.85); }
+  50% { opacity: 1; transform: scale(1.1); }
+}
+.pulse-drop { animation: pulse-drop 1.6s ease-in-out infinite; }
+
+/* Every sheet answers a click with a ripple from where you pressed. */
+.sheet { position: relative; overflow: hidden; }
+.sheet::after {
+  content: "";
+  position: absolute;
+  top: var(--ripple-y, 50%);
+  left: var(--ripple-x, 50%);
+  width: 8px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: color-mix(in oklch, var(--primary), transparent 75%);
+  transform: translate(-50%, -50%) scale(0);
+  opacity: 0;
+  pointer-events: none;
+}
+.sheet:active::after { animation: ripple 620ms ease-out; }
+@keyframes ripple {
+  0% { transform: translate(-50%, -50%) scale(0); opacity: 0.8; }
+  100% { transform: translate(-50%, -50%) scale(46); opacity: 0; }
+}
+
+/* Reading Mode: the article, and nothing to click. */
+.prose-zen p { margin-bottom: 1.2em; }
+.prose-zen h2, .prose-zen h3 { font-family: var(--font-display); font-weight: 500; margin: 1.8em 0 0.6em; }
+.prose-zen a { color: var(--primary); text-decoration: underline; text-underline-offset: 3px; }
+.prose-zen img { margin: 1.8em 0; max-width: 100%; height: auto; }
+.prose-zen blockquote { border-inline-start: 1px solid var(--primary); padding-inline-start: 1.2em; font-family: var(--font-display); }
+.prose-zen ul, .prose-zen ol { margin: 0 0 1.2em 1.2em; list-style: disc; }
+.prose-zen figure figcaption { color: var(--muted-foreground); font-size: 0.8rem; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .settle { opacity: 1; }
+}
+
+/* ---- motion, everywhere it earns its place ---------------------------- */
+
+/* Every page arrives like a page being laid down. */
+@keyframes page-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+[data-page] { animation: page-in 420ms cubic-bezier(0.22, 1, 0.36, 1); }
+
+/* Theme changes are a wash, not a switch. */
+body, .sheet, nav a, aside a, aside button {
+  transition:
+    background-color 450ms ease,
+    color 450ms ease,
+    border-color 450ms ease;
+}
+
+/* Nav: the ink line is drawn under the word you are about to choose. */
+nav a { position: relative; }
+nav a::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -5px;
+  height: 1px;
+  width: 100%;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+nav a:hover::after { transform: scaleX(1); }
+
+/* Rail marks answer the pointer. */
+aside a, aside button { transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1), color 320ms ease; }
+aside a:hover, aside button:hover { transform: translateY(-2px) scale(1.08); }
+
+/* A picture leans in when its sheet is hovered. */
+.sheet img { transition: transform 700ms cubic-bezier(0.22, 1, 0.36, 1); }
+.sheet:hover img { transform: scale(1.035); }
+
+/* The dialog rises out of the page. */
+@keyframes dialog-in {
+  from { opacity: 0; transform: translateY(14px) scale(0.985); }
+  to { opacity: 1; transform: none; }
+}
+/* The shared dialog opens with no animation of its own, so this one is the one that plays. */
+[role="dialog"][data-open] { animation: dialog-in 420ms cubic-bezier(0.22, 1, 0.36, 1); }
+
+/* The face inside the drop changes with a blink, not a cut. */
+.drop-face { transition: opacity 180ms ease; }
+
+@media (prefers-reduced-motion: reduce) {
+  [data-page], [role="dialog"] { animation: none; }
+  .sheet:hover img { transform: none; }
+  aside a:hover, aside button:hover { transform: none; }
+}
+
+/* Keyboard users need to see where they are; outline-none took that away. */
+input:focus-visible,
+textarea:focus-visible,
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+/* Text fields are written in, not pressed: a thin square line, close in. */
+input:focus-visible,
+textarea:focus-visible { outline-width: 1px; outline-offset: 4px; }
+/* A field drawn as one ruled line shows focus by inking that line instead (focus:border-primary,
+   or the search line's peer span). */
+input[data-ruled]:focus-visible { outline: none; }
+/* Focus Mode's page is the field; the caret is the only mark it needs. */
+textarea[data-sole]:focus-visible { outline: none; }
+
+/* Something being dragged over the page: the paper darkens and waits. */
+.catching { position: relative; }
+.catching::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  pointer-events: none;
+  background: color-mix(in oklch, var(--primary), transparent 92%);
+  animation: catch-pulse 1.4s ease-in-out infinite;
+}
+@keyframes catch-pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+/* Results swap with a breath, not a cut. */
+@keyframes results-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+.results-in { animation: results-in 320ms cubic-bezier(0.22, 1, 0.36, 1); }
+
+/* Long-running float is composited; tell the browser once. */
+.adrift { will-change: transform; }
+
+@media (prefers-reduced-motion: reduce) {
+  .catching::before { animation: none; opacity: 0.7; }
+  .adrift { will-change: auto; }
+}
+
+/* Landing demos: a board assembling itself, and a caret that blinks. */
+@keyframes demo-tile-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+.demo-tile { animation: demo-tile-in 620ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+@keyframes caret { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .demo-tile { animation: none; opacity: 1; }
+}

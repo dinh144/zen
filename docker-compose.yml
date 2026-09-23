@@ -1,0 +1,9 @@
+services:
+  db:
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_PASSWORD: zen
+      POSTGRES_USER: zen
+      POSTGRES_DB: zen
+    ports: ["5434:5432"]
+    volumes: ["./data/pg:/var/lib/postgresql/data"]

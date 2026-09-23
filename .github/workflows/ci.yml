@@ -1,0 +1,16 @@
+name: ci
+on: [push, pull_request]
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    env:
+      # Pages are force-dynamic, so the build never connects; the client only needs a URL to parse.
+      DATABASE_URL: postgres://zen:zen@localhost:5434/zen
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bun run typecheck
+      - run: bun run lint
+      - run: cd apps/web && bun run test
+      - run: bun run build

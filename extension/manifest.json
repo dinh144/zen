@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "zen — save to your mind",
+  "version": "1.0.0",
+  "description": "Save any page, image, or selection to zen.",
+  "permissions": ["contextMenus", "activeTab", "storage", "notifications"],
+  "icons": { "128": "icon.png" },
+  "host_permissions": ["http://localhost/*", "https://*/*"],
+  "background": { "service_worker": "background.js" },
+  "action": { "default_popup": "popup.html" },
+  "commands": {
+    "save-page": {
+      "suggested_key": { "default": "Ctrl+Shift+S" },
+      "description": "Save this page to zen"
+    }
+  }
+}
