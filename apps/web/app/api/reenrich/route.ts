@@ -11,7 +11,7 @@ export const POST = withUser(async (me, request: Request) => {
     WHERE user_id = ${me} AND deleted_at IS NULL ${all ? sql`` : sql`AND (embedding IS NULL OR tags = '{}')`}
     ORDER BY created_at DESC LIMIT 200`
 
-  await queueCards(rows.map((row) => row.id), me)
+  await queueCards(rows.map((row) => row.id), me, all)
 
   return json({ queued: rows.length })
 })

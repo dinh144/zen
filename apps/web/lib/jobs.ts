@@ -2,7 +2,7 @@ import { after } from "next/server"
 import { Inngest } from "inngest"
 import { enrichCard } from "./enrich"
 import { recluster } from "./clusters"
-import { extractCard, profileHubs } from "./graph"
+import { EXTRACT_VERSION, extractCard, profileHubs } from "./graph"
 import { sql } from "./db"
 import { lint, morningBrief } from "./tasks"
 import { languageOf } from "./settings"
@@ -13,7 +13,7 @@ import { languageOf } from "./settings"
 export const inngest = new Inngest({ id: "zen", isDev: !process.env.INNGEST_SIGNING_KEY })
 
 export type Jobs = {
-  "zen/card.saved": { data: { cardId: string; userId: string; batch?: boolean } }
+  "zen/card.saved": { data: { cardId: string; userId: string; batch?: boolean; force?: boolean } }
   "zen/mind.changed": { data: { userId: string } }
 }
 
@@ -28,8 +28,17 @@ export const cardSaved = inngest.createFunction(
     priority: { run: "event.data.batch == true ? -600 : 600" },
   },
   async ({ event, step }) => {
-    await step.run("enrich", () => enrichCard(event.data.cardId))
-    await step.run("extract", () => extractCard(event.data.cardId))
+    const { cardId, force } = event.data
+    // A card queued twice (a re-import, a double save) is read once: skip what is already current.
+    const [card] = await step.run("look", () =>
+      sql<{ fresh: boolean; read: boolean }[]>`
+        SELECT deleted_at IS NULL AND enriched_at IS NOT NULL AND enriched_at >= updated_at AND embedding IS NOT NULL AS fresh,
+               extracted_at IS NOT NULL AND extracted_at >= updated_at AND extract_version = ${EXTRACT_VERSION} AS read
+        FROM cards WHERE id = ${cardId} AND deleted_at IS NULL`,
+    )
+    if (!card) return
+    if (force || !card.fresh) await step.run("enrich", () => enrichCard(cardId))
+    if (force || !card.fresh || !card.read) await step.run("extract", () => extractCard(cardId))
     await step.sendEvent("mind-changed", { name: "zen/mind.changed", data: { userId: event.data.userId } })
   },
 )
@@ -83,11 +92,11 @@ export const functions = [cardSaved, mindChanged, brief, weekly]
 export const queueCard = (cardId: string, userId: string) => queueCards([cardId], userId)
 
 /** A batch (import, re-enrich): one send, and without Inngest one recluster at the end, not one per card. */
-export async function queueCards(cardIds: string[], userId: string) {
+export async function queueCards(cardIds: string[], userId: string, force = false) {
   if (!cardIds.length) return
   try {
     const batch = cardIds.length > 1
-    await inngest.send(cardIds.map((cardId) => ({ name: "zen/card.saved", data: { cardId, userId, batch } })))
+    await inngest.send(cardIds.map((cardId) => ({ name: "zen/card.saved", data: { cardId, userId, batch, force } })))
   } catch {
     after(async () => {
       for (const cardId of cardIds) {
