@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { ViewTransition } from "react"
 import { Droplet } from "@/components/droplet"
 import { dropDataUri, INK_TEXT, INKS, type Expression, type Ink } from "@/lib/drop"
 
@@ -88,8 +89,13 @@ export function Mark({ readOnly }: { readOnly?: boolean }) {
   const { mood } = useDrop()
   return (
     <span className="inline-flex items-center gap-2.5">
-      <Droplet expression={mood} className="text-primary h-6 w-[18px]" motion={readOnly ? "still" : "fall"} />
-      <span className="font-display text-base tracking-[0.3em] lowercase">zen</span>
+      {/* One drop across every page: a tab change carries it over and it takes the new page's mood. */}
+      <ViewTransition name="zen-drop" share="morph" default="none">
+        <span data-drop className="inline-flex">
+          <Droplet expression={mood} className="text-primary h-6 w-[18px]" motion={readOnly ? "still" : "fall"} />
+        </span>
+      </ViewTransition>
+      <span className="font-display text-base tracking-[0.3em] lowercase">zen ai</span>
     </span>
   )
 }

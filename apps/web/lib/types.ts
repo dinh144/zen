@@ -46,6 +46,7 @@ export type Space = {
   query: string | null
   share_token: string | null
   created_at: string
+  parent_id?: string | null
   card_count?: number
   cover?: string[]
 }

@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { fresh } from "@/lib/morph"
 
 /** Cards settle in as they reach the viewport, each a beat after the last. */
 export function Reveal({
@@ -20,6 +21,10 @@ export function Reveal({
   React.useEffect(() => {
     const node = ref.current
     if (!node) return
+    if (fresh()) {
+      node.classList.add("in", "now")
+      return
+    }
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (!entry?.isIntersecting) return

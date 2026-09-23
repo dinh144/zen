@@ -6,6 +6,7 @@ import { TopNav } from "@/components/top-nav"
 import { Reveal } from "@/components/reveal"
 import { SpaceControls } from "@/components/space-controls"
 import { SpacesHeading, SpacesEmpty, SpaceMeta } from "@/components/space-copy"
+import { SpaceChildren } from "@/components/space-tree"
 
 export const dynamic = "force-dynamic"
 
@@ -21,12 +22,13 @@ export default async function SpacesPage() {
       <SpaceControls />
       </div>
       <ul className="mt-12 grid gap-8 px-6 sm:grid-cols-2 sm:px-12 lg:grid-cols-3">
-        {spaces.map((space, index) => (
+        {spaces.filter((space) => !space.parent_id).map((space, index) => (
           <Reveal key={space.id} index={index} as="li" className="sheet px-6 py-7">
-            <Link href={`/spaces/${space.id}`} className="font-display text-[17px] tracking-wide">
+            <Link href={`/spaces/${space.id}`} transitionTypes={["ink"]} className="font-display text-[19px] tracking-wide">
               {space.name}
             </Link>
             <SpaceMeta query={space.query} count={space.card_count ?? 0} />
+            <SpaceChildren spaces={spaces} parent={space.id} />
             <SpaceControls space={space} />
           </Reveal>
         ))}

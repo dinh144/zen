@@ -1,6 +1,5 @@
-import { after } from "next/server"
 import { createCard, spend } from "@/lib/cards"
-import { enrichCard } from "@/lib/enrich"
+import { queueCard } from "@/lib/jobs"
 import { fileSize, getFile, uploadTicket } from "@/lib/storage"
 import { describeUpload, MAX_UPLOAD, storeUpload, uploadName } from "@/lib/upload"
 import { json } from "@/lib/http"
@@ -34,7 +33,7 @@ export const POST = withUser(async (me, request: Request) => {
       ...(await describeUpload(name, String(body.name ?? name), type, size, bytes)),
       title: String(body.name ?? "") || name,
     })
-    after(() => enrichCard(card.id))
+    await queueCard(card.id, me)
     return json({ card }, 201)
   }
 
@@ -51,6 +50,6 @@ export const POST = withUser(async (me, request: Request) => {
     note: (form.get("note") as string) || null,
   })
 
-  after(() => enrichCard(card.id))
+  await queueCard(card.id, me)
   return json({ card }, 201)
 })

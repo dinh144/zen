@@ -3,6 +3,8 @@ import { randomBytes } from "node:crypto"
 import { sql } from "./db"
 import { embed } from "./ai"
 import type { Card, Space } from "./types"
+import { STRINGS, translate, type Locale } from "./i18n"
+import { localeOf } from "./settings"
 
 // Vietnamese needs the accents folded away on both sides of the comparison.
 const DOC = sql`to_tsvector('simple', zen_unaccent(
@@ -24,10 +26,12 @@ export async function listCards(me: string, limit = 60, after?: string) {
 
 /** Top of Mind: the few cards pinned above everything else. */
 export async function pinnedCards(me: string) {
+  // Pinned by hand, or due: a dated card comes to hand the day before and stays a week after.
   return sql<Card[]>`
     SELECT ${COLUMNS} FROM cards
-    WHERE user_id = ${me} AND deleted_at IS NULL AND pinned_at IS NOT NULL
-    ORDER BY pinned_at DESC LIMIT 12`
+    WHERE user_id = ${me} AND deleted_at IS NULL
+      AND (pinned_at IS NOT NULL OR resurface_at BETWEEN now() - interval '7 days' AND now())
+    ORDER BY coalesce(pinned_at, resurface_at) DESC LIMIT 12`
 }
 
 export const setPinned = (me: string, id: string, pinned: boolean) =>
@@ -59,6 +63,17 @@ export const linkCards = (me: string, from: string, to: string) =>
     SELECT a.id, b.id FROM cards a, cards b
     WHERE a.id = ${from} AND b.id = ${to} AND a.user_id = ${me} AND b.user_id = ${me}
     ON CONFLICT DO NOTHING`
+
+/** Ties a card to every card its note names as [[Title]] (case and accents ignored). */
+export async function linkByTitles(me: string, id: string, titles: string[]) {
+  if (!titles.length) return
+  await sql`INSERT INTO card_links (from_id, to_id)
+    SELECT ${id}, c.id FROM cards c
+    WHERE c.user_id = ${me} AND c.deleted_at IS NULL AND c.id <> ${id}
+      AND zen_unaccent(lower(c.title)) IN (SELECT zen_unaccent(lower(t)) FROM unnest(${titles}::text[]) t)
+      AND EXISTS (SELECT 1 FROM cards WHERE id = ${id} AND user_id = ${me})
+    ON CONFLICT DO NOTHING`
+}
 
 export const unlinkCards = (me: string, from: string, to: string) =>
   sql`DELETE FROM card_links WHERE (from_id, to_id) IN ((${from}, ${to}), (${to}, ${from}))
@@ -115,10 +130,13 @@ export async function searchCards(me: string, raw: string, limit = 60) {
     sites: [] as string[],
     after: null as string | null,
     before: null as string | null,
+    without: [] as string[],
   }
   let words = raw
     .split(/\s+/)
     .filter((word) => {
+      // "shoes -red": a leading minus leaves out cards with that word, tag or colour.
+      if (word.length > 1 && word.startsWith("-")) return !filters.without.push(word.slice(1).toLowerCase())
       if (word.startsWith("#")) return !filters.tags.push(word.slice(1).toLowerCase())
       if (word.startsWith("is:")) return !filters.kinds.push(word.slice(3).toLowerCase())
       if (word.startsWith("site:")) return !filters.sites.push(word.slice(5).toLowerCase())
@@ -165,12 +183,26 @@ export async function searchCards(me: string, raw: string, limit = 60) {
       ? sql`${filters.after}::timestamptz`
       : null
 
+  const without = filters.without.length
+    ? filters.without.map((word) => {
+        const colour = COLOR_WORDS[word]
+        return sql`AND NOT (
+          zen_unaccent(coalesce(title,'') || ' ' || coalesce(note,'') || ' ' || array_to_string(tags, ' '))
+            ILIKE zen_unaccent(${"%" + word + "%"})
+          ${colour ? sql`OR EXISTS (SELECT 1 FROM unnest(colors) AS hex
+            WHERE abs(('x' || substr(hex, 2, 2))::bit(8)::int - ${colour[0]}) < 95
+              AND abs(('x' || substr(hex, 4, 2))::bit(8)::int - ${colour[1]}) < 95
+              AND abs(('x' || substr(hex, 6, 2))::bit(8)::int - ${colour[2]}) < 95)` : sql``})`
+      })
+    : []
+  const excluded = without.reduce((acc, part) => sql`${acc} ${part}`, sql``)
+
   const color = COLOR_WORDS[words.trim().toLowerCase()]
   if (color) {
     const [red, green, blue] = color
     return sql<Card[]>`
       SELECT ${COLUMNS} FROM cards
-      WHERE user_id = ${me} AND deleted_at IS NULL AND EXISTS (
+      WHERE user_id = ${me} AND deleted_at IS NULL ${excluded} AND EXISTS (
         SELECT 1 FROM unnest(colors) AS hex
         WHERE abs(('x' || substr(hex, 2, 2))::bit(8)::int - ${red}) < 95
           AND abs(('x' || substr(hex, 4, 2))::bit(8)::int - ${green}) < 95
@@ -194,7 +226,7 @@ export async function searchCards(me: string, raw: string, limit = 60) {
            ELSE 1 - (embedding <=> ${vec}::vector) END AS vscore,
       ts_rank(${DOC}, plainto_tsquery('simple', zen_unaccent(${words || "zzzz"}))) AS tscore
     FROM cards
-    WHERE user_id = ${me} AND deleted_at IS NULL
+    WHERE user_id = ${me} AND deleted_at IS NULL ${excluded}
       ${filters.tags.length ? sql`AND tags && ${filters.tags}` : sql``}
       ${filters.kinds.length ? sql`AND kind = ANY(${filters.kinds})` : sql``}
       ${filters.sites.length ? sql`AND domain = ANY(${filters.sites})` : sql``}
@@ -282,10 +314,24 @@ export async function updateCard(me: string, id: string, patch: Partial<Card>) {
 export const deleteCard = (me: string, id: string) =>
   sql`UPDATE cards SET deleted_at = now() WHERE id = ${id} AND user_id = ${me}`
 
+/** Undo for a let-go: the card comes back as it was. */
+export const restoreCard = (me: string, id: string) =>
+  sql`UPDATE cards SET deleted_at = NULL WHERE id = ${id} AND user_id = ${me}`
+
+/** The day zen brings a card back (null: never). */
+export const setResurface = (me: string, id: string, at: Date | null) =>
+  sql`UPDATE cards SET resurface_at = ${at} WHERE id = ${id} AND user_id = ${me}`
+
+export async function resurfaceOf(me: string, id: string) {
+  const [row] = await sql<{ resurface_at: string | null }[]>`
+    SELECT resurface_at FROM cards WHERE id = ${id} AND user_id = ${me}`
+  return row?.resurface_at ?? null
+}
+
 /** `counts` runs each Smart Space's search (an embedding call apiece): only the spaces page shows them. */
 export async function listSpaces(me: string, counts = false) {
   const spaces = await sql<Space[]>`
-    SELECT s.id, s.name, s.query, s.share_token, s.created_at,
+    SELECT s.id, s.name, s.query, s.share_token, s.created_at, s.parent_id,
            count(cs.card_id)::int AS card_count,
            coalesce(array_agg(c.image_path) FILTER (WHERE c.image_path IS NOT NULL), '{}') AS cover
     FROM spaces s
@@ -323,9 +369,12 @@ export async function spaceCards(me: string | null, idOrToken: string, byToken =
 }
 
 /** A space with a query is a Smart Space: it fills itself from that search. */
-export async function createSpace(me: string, name: string, query?: string | null) {
+export async function createSpace(me: string, name: string, query?: string | null, parent?: string | null) {
+  // A parent that is not this person's own space is dropped, not trusted.
   const [space] = await sql<Space[]>`
-    INSERT INTO spaces (user_id, name, query) VALUES (${me}, ${name}, ${query ?? null}) RETURNING *`
+    INSERT INTO spaces (user_id, name, query, parent_id)
+    VALUES (${me}, ${name}, ${query ?? null}, (SELECT id FROM spaces WHERE id = ${parent ?? null} AND user_id = ${me}))
+    RETURNING *`
   return space!
 }
 
@@ -348,30 +397,15 @@ export const removeFromSpace = (me: string, cardId: string, spaceId: string) =>
 
 export const deleteSpace = (me: string, id: string) => sql`DELETE FROM spaces WHERE id = ${id} AND user_id = ${me}`
 
-const SEED = [
-  {
-    kind: "note" as const,
-    title: "Start here today",
-    note: "Paste a link. Drop an image. Type a thought.\nEverything is tagged for you — no folders, no filing.\nSearch by what you remember: a colour, an object, a word inside a picture.",
-  },
-  {
-    kind: "quote" as const,
-    title: "Your mind, not a feed",
-    content: "Remember everything. Organize nothing.",
-    meta: { quote: "Remember everything. Organize nothing." },
-  },
-  {
-    kind: "note" as const,
-    title: "Keyboard",
-    note: "Type anywhere to search.\n⌘+Enter saves the note you are writing.\nShift+D switches day and night.\nEsc clears the search.",
-  },
-]
-
-/** A mind that has never been used gets three cards, the way mymind seeds one. */
+/** A new mind starts with three cards of zen's own, in the language it speaks. */
 export async function seedIfEmpty(me: string) {
   const [row] = await sql<{ count: number }[]>`SELECT count(*)::int FROM cards WHERE user_id = ${me}`
   if (row!.count > 0) return
-  for (const card of SEED) await createCard(me, card)
+  const locale = (await localeOf(me)) as Locale
+  const say = (key: keyof (typeof STRINGS)["seed"]) => translate(locale, "seed", key)
+  await createCard(me, { kind: "note", title: say("startTitle"), note: say("startBody") })
+  await createCard(me, { kind: "quote", content: say("motto"), meta: { quote: say("motto") } })
+  await createCard(me, { kind: "note", title: say("keysTitle"), note: say("keysBody") })
 }
 
 export async function stats(me: string) {

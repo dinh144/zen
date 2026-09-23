@@ -16,7 +16,7 @@ export function DropPicker() {
     <div className="flex flex-col gap-8">
       <div className="flex items-end gap-8">
         <Droplet expression={preview} ink={ink} className="h-20 w-[60px]" motion="idle" />
-        <p className="text-muted-foreground text-[10px] tracking-[0.25em] lowercase">
+        <p className="text-muted-foreground text-[12px] tracking-[0.25em] lowercase">
           {t("inks", ink)} · {t("moods", preview)}
         </p>
       </div>
@@ -53,7 +53,7 @@ export function DropPicker() {
           >
             <Droplet expression={expression} ink={ink} className="h-9 w-[27px]" motion="still" />
             <span
-              className={`text-[9px] tracking-[0.14em] lowercase ${
+              className={`text-[11px] tracking-[0.14em] lowercase ${
                 preview === expression ? "text-foreground" : "text-muted-foreground"
               }`}
             >

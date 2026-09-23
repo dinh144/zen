@@ -26,10 +26,10 @@ export function ImportBox() {
           setStatus(t("settings", "imported").replace("%n", String(data.imported)))
         }}
       />
-      <span className="text-muted-foreground hover:text-primary cursor-pointer text-[10px] tracking-[0.22em] lowercase transition-colors">
+      <span className="text-muted-foreground hover:text-primary cursor-pointer text-[12px] tracking-[0.22em] lowercase transition-colors">
         {t("settings", "import")}
       </span>
-      {status ? <span className="text-muted-foreground ms-4 text-[11px]">{status}</span> : null}
+      {status ? <span className="text-muted-foreground ms-4 text-[13px]">{status}</span> : null}
     </label>
   )
 }

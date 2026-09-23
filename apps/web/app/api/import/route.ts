@@ -1,7 +1,6 @@
-import { after } from "next/server"
 import { addToSpace, createCard, createSpace, linkCards, spend } from "@/lib/cards"
 import type { Card } from "@/lib/types"
-import { enrichCard } from "@/lib/enrich"
+import { queueCards } from "@/lib/jobs"
 import { json } from "@/lib/http"
 import { fromCsv, fromHtml, type Incoming } from "@/lib/import"
 import { withUser } from "@/lib/user"
@@ -55,8 +54,6 @@ export const POST = withUser(async (me, request: Request) => {
     if (ids.has(from_id) && ids.has(to_id)) await linkCards(me, ids.get(from_id)!, ids.get(to_id)!)
   }
 
-  after(async () => {
-    for (const card of created) await enrichCard(card.id)
-  })
+  await queueCards(created.map((card) => card.id), me)
   return json({ imported: created.length }, 201)
 })

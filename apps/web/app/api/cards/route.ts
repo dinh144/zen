@@ -1,6 +1,6 @@
 import { after } from "next/server"
 import { createCard, listCards, searchCards, spend, stats, unlock } from "@/lib/cards"
-import { enrichCard } from "@/lib/enrich"
+import { queueCard } from "@/lib/jobs"
 import { json } from "@/lib/http"
 import { withUser } from "@/lib/user"
 
@@ -28,8 +28,8 @@ export const POST = withUser(async (me, request: Request) => {
   })
 
   // Capture returns immediately; tagging, OCR and embedding run after the response.
+  await queueCard(card.id, me)
   after(async () => {
-    await enrichCard(card.id)
     const { total } = await stats(me)
     if (total >= 1) await unlock(me, "first-card")
     if (total >= 10) await unlock(me, "ten-cards")

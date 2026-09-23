@@ -1,6 +1,5 @@
-import { after } from "next/server"
 import { sql } from "@/lib/db"
-import { enrichCard } from "@/lib/enrich"
+import { queueCards } from "@/lib/jobs"
 import { json } from "@/lib/http"
 import { withUser } from "@/lib/user"
 
@@ -12,9 +11,7 @@ export const POST = withUser(async (me, request: Request) => {
     WHERE user_id = ${me} AND deleted_at IS NULL ${all ? sql`` : sql`AND (embedding IS NULL OR tags = '{}')`}
     ORDER BY created_at DESC LIMIT 200`
 
-  after(async () => {
-    for (const row of rows) await enrichCard(row.id)
-  })
+  await queueCards(rows.map((row) => row.id), me)
 
   return json({ queued: rows.length })
 })

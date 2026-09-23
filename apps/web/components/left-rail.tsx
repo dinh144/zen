@@ -5,7 +5,9 @@ import Link from "next/link"
 import { useTheme } from "next-themes"
 import { Brush, Columns3, Droplet, Import, Languages, Settings, Wind } from "lucide-react"
 import { useLocale, useT } from "@/components/locale"
+import { LOCALES } from "@/lib/i18n"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@workspace/ui/components/tooltip"
+import { Kbd, KbdGroup } from "@workspace/ui/components/kbd"
 
 /** Five marks down the left margin — a bottom strip on a phone. */
 export function LeftRail({
@@ -29,10 +31,10 @@ export function LeftRail({
     { icon: Import, label: t("rail", "bringIn"), action: () => input.current?.click() },
     { icon: Brush, label: t("rail", "brush"), href: "/focus" },
     { icon: Wind, label: t("rail", "drift"), href: "/serendipity" },
-    { icon: Droplet, label: t("rail", dark ? "paper" : "night"), action: () => setTheme(dark ? "light" : "dark") },
+    { icon: Droplet, label: t("rail", dark ? "paper" : "night"), action: () => setTheme(dark ? "light" : "dark"), keys: ["⇧", "D"] },
     { icon: Columns3, label: t("rail", dense ? "loosen" : "tighten"), action: onDense },
-    { icon: Languages, label: t("rail", "language"), action: () => setLocale(locale === "vi" ? "en" : "vi") },
-  ] satisfies { icon: typeof Import; label: string; action?: () => void; href?: string }[]
+    { icon: Languages, label: t("rail", "language"), action: () => setLocale(LOCALES[(LOCALES.indexOf(locale) + 1) % LOCALES.length]!) },
+  ] satisfies { icon: typeof Import; label: string; action?: () => void; href?: string; keys?: string[] }[]
 
   return (
     <TooltipProvider>
@@ -58,8 +60,17 @@ export function LeftRail({
             >
               <item.icon className="size-4" strokeWidth={1.25} />
             </TooltipTrigger>
-            <TooltipContent side="right" className="text-[10px] tracking-[0.18em] lowercase">
+            <TooltipContent side="right" className="flex items-center gap-2 text-[12px] tracking-[0.18em] lowercase">
               {item.label}
+              {"keys" in item && item.keys ? (
+                <KbdGroup>
+                  {item.keys.map((key) => (
+                    <Kbd key={key} className="rounded-none">
+                      {key}
+                    </Kbd>
+                  ))}
+                </KbdGroup>
+              ) : null}
             </TooltipContent>
           </Tooltip>
         ))}
@@ -75,7 +86,7 @@ export function LeftRail({
           >
             <Settings className="size-4" strokeWidth={1.25} />
           </TooltipTrigger>
-          <TooltipContent side="right" className="text-[10px] tracking-[0.18em] lowercase">
+          <TooltipContent side="right" className="text-[12px] tracking-[0.18em] lowercase">
             {t("settings", "title")}
           </TooltipContent>
         </Tooltip>

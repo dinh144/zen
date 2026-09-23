@@ -1,34 +1,37 @@
 "use client"
 
-import * as React from "react"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@workspace/ui/components/alert-dialog"
 import { useT } from "@/components/locale"
 
-/** Two presses, no dialog: the first one only asks. */
+/** The first press only asks; the account goes from inside the dialog. */
 export function DeleteAccount() {
   const t = useT()
-  const [armed, setArmed] = React.useState(false)
   return (
-    <form action="/auth/delete" method="post" className="flex items-center gap-4">
-      {armed ? (
-        <>
-          {/* Its own key: reusing the arming button's node would turn that very click into a submit. */}
-          <button key="sure" className="text-destructive text-[10px] tracking-[0.22em] lowercase">
-            {t("settings", "deleteSure")}
-          </button>
-          <button key="keep" type="button" onClick={() => setArmed(false)} className="text-muted-foreground text-[10px] tracking-[0.22em] lowercase">
-            {t("settings", "deleteKeep")}
-          </button>
-        </>
-      ) : (
-        <button
-          key="arm"
-          type="button"
-          onClick={() => setArmed(true)}
-          className="text-muted-foreground hover:text-destructive text-[10px] tracking-[0.22em] lowercase transition-colors"
-        >
-          {t("settings", "delete")}
-        </button>
-      )}
-    </form>
+    <AlertDialog>
+      <AlertDialogTrigger className="text-muted-foreground hover:text-destructive w-fit text-[12px] tracking-[0.22em] lowercase transition-colors">
+        {t("settings", "delete")}
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogTitle className="font-display text-lg tracking-wide">{t("panelUi", "deleteTitle")}</AlertDialogTitle>
+        <AlertDialogDescription>{t("panelUi", "deleteBody")}</AlertDialogDescription>
+        <AlertDialogFooter>
+          <AlertDialogCancel>{t("settings", "deleteKeep")}</AlertDialogCancel>
+          <form action="/auth/delete" method="post">
+            <AlertDialogAction type="submit" variant="destructive" className="w-full">
+              {t("settings", "deleteSure")}
+            </AlertDialogAction>
+          </form>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   )
 }

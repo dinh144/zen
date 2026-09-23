@@ -3,9 +3,10 @@ import { sql } from "./db"
 import { sanitizeArticle } from "./sanitize"
 import { safeFetch } from "./safe-fetch"
 import { cloud } from "./supabase"
-import { embed, enrichImage, enrichText } from "./ai"
+import { embed, enrichImage, enrichText, transcribe } from "./ai"
 import { readPdf } from "./pdf"
 import { getFile } from "./storage"
+import { languageOf } from "./settings"
 import type { Kind } from "./types"
 
 
@@ -104,6 +105,19 @@ async function fetchImageBase64(url: string) {
 export async function enrichCard(id: string) {
   const [card] = await sql`SELECT * FROM cards WHERE id = ${id}`
   if (!card) return
+  const lang = await languageOf(card.user_id)
+
+  // Voice note: hear it first, then treat the words like any written note.
+  const mime = (card.meta as { mime?: string }).mime ?? ""
+  if (mime.startsWith("audio/") && card.image_path && !card.note) {
+    const audio = await getFile(card.image_path)
+    const words = audio ? await transcribe(audio.toString("base64"), mime) : null
+    if (words) {
+      await sql`UPDATE cards SET note = ${words}, image_path = NULL WHERE id = ${id}`
+      card.note = words
+      card.image_path = null
+    }
+  }
 
   let kind: Kind = card.kind
   let title: string | null = card.title
@@ -193,9 +207,10 @@ export async function enrichCard(id: string) {
 
   const ai =
     image && image.base64
-      ? await enrichImage(image.base64, image.mime, `${title ?? ""}\n${content.slice(0, 1500)}`)
+      ? await enrichImage(image.base64, image.mime, `${title ?? ""}\n${content.slice(0, 1500)}`, lang)
       : await enrichText(
           [title, card.note, content].filter(Boolean).join("\n").slice(0, 8000),
+          lang,
         )
 
   if (ai) {
@@ -219,6 +234,8 @@ export async function enrichCard(id: string) {
     const bare = (card.note ?? "").replace(/#[0-9a-f]{6}\b/gi, "").trim()
     if (!card.url && card.kind === "note" && hexesIn(card.note ?? "").length && bare.length < 30) kind = "color"
     patch.meta = { ...(patch.meta ?? card.meta), summary: ai.summary }
+    // A dated item surfaces the day before it matters, at hand on the board and in the morning brief.
+    if (ai.when) patch.resurface_at = new Date(`${ai.when}T00:00:00Z`).getTime() - 86_400_000
   }
 
   const vector = await embed(
@@ -237,6 +254,7 @@ export async function enrichCard(id: string) {
       colors = ${(patch.colors as string[]) ?? card.colors},
       meta = ${sql.json((patch.meta ?? card.meta) as never)},
       embedding = ${vector ? JSON.stringify(vector) : null},
+      resurface_at = ${patch.resurface_at ? new Date(patch.resurface_at as number) : card.resurface_at ?? null},
       enriched_at = now(),
       updated_at = now()
     WHERE id = ${id}`

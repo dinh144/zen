@@ -27,8 +27,9 @@ export async function proxy(request: NextRequest) {
     return response
   }
   if (!request.nextUrl.pathname.startsWith("/api/")) return
-  if (request.nextUrl.pathname.match(/^\/api\/(login|file)/)) return
-  if (request.method === "OPTIONS" || validSession(request.cookies.get(COOKIE)?.value)) return
+  if (request.nextUrl.pathname.match(/^\/api\/(login|file|inngest|mcp)/)) return
+  const bearer = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "")
+  if (request.method === "OPTIONS" || validSession(request.cookies.get(COOKIE)?.value) || (bearer && validSession(bearer))) return
   return NextResponse.json({ error: "locked" }, { status: 401, headers: cors })
 }
 

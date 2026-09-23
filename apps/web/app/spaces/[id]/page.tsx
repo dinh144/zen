@@ -2,6 +2,7 @@ import { redirect } from "next/navigation"
 import { currentUser } from "@/lib/user"
 import { listSpaces, spaceCards } from "@/lib/cards"
 import { Board } from "@/components/board"
+import { SpaceTree } from "@/components/space-tree"
 
 export const dynamic = "force-dynamic"
 
@@ -11,5 +12,5 @@ export default async function SpacePage({ params }: { params: Promise<{ id: stri
   const { id } = await params
   const [cards, spaces] = await Promise.all([spaceCards(me, id), listSpaces(me)])
   const space = spaces.find((item) => item.id === id)
-  return <Board initialCards={cards} spaces={spaces} heading={space?.name ?? "space"} mode="static" />
+  return <Board initialCards={cards} spaces={spaces} heading={space?.name ?? "space"} mode="static" below={space ? <SpaceTree key="tree" spaces={spaces} space={space} /> : null} />
 }

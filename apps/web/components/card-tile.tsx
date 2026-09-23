@@ -5,8 +5,20 @@ import { FileText, Play } from "lucide-react"
 import { cn } from "@workspace/ui/lib/utils"
 import { Droplet } from "@/components/droplet"
 import { useT } from "@/components/locale"
+import { NoteBody } from "@/components/note-view"
 import { contrast, KIND_INK } from "@/lib/drop"
-import type { Card } from "@/lib/types"
+import type { Card, Space } from "@/lib/types"
+import { notify } from "@/lib/notify"
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuSub,
+  ContextMenuSubContent,
+  ContextMenuSubTrigger,
+  ContextMenuTrigger,
+} from "@workspace/ui/components/context-menu"
 
 export const imageOf = (card: Card) => {
   const meta = card.meta as { file?: string; image?: string; poster?: string }
@@ -40,7 +52,7 @@ export function CardTile({ card, onOpen }: { card: Card; onOpen: (card: Card) =>
   const meta = card.meta as Record<string, string | undefined>
 
   return (
-    <figure className="group">
+    <figure className="group" data-card={card.id}>
       <button
         onPointerDown={(event) => {
           // The ripple starts where the finger lands.
@@ -55,7 +67,7 @@ export function CardTile({ card, onOpen }: { card: Card; onOpen: (card: Card) =>
           <div className="flex h-40">
             {(card.colors.length ? card.colors : [hexOf(card) ?? "var(--muted)"]).map((hex) => (
               <div key={hex} className="flex flex-1 items-end p-4" style={{ background: hex }}>
-                <span className="font-sans text-[11px] tracking-[0.2em] lowercase" style={{ color: labelOn(hex) }}>
+                <span className="font-sans text-[13px] tracking-[0.2em] lowercase" style={{ color: labelOn(hex) }}>
                   {hex.startsWith("#") ? hex : ""}
                 </span>
               </div>
@@ -64,13 +76,13 @@ export function CardTile({ card, onOpen }: { card: Card; onOpen: (card: Card) =>
         ) : card.kind === "font" ? (
           <div className="px-6 py-7">
             <p className="font-display text-5xl leading-none">Aa</p>
-            <h3 className="font-display mt-5 text-[15px] tracking-wide">{card.title ?? card.url}</h3>
-            <span className="text-muted-foreground mt-2 block text-[10px] tracking-[0.25em] lowercase">{card.domain}</span>
+            <h3 className="font-display mt-5 text-[17px] tracking-wide">{card.title ?? card.url}</h3>
+            <span className="text-muted-foreground mt-2 block text-[12px] tracking-[0.25em] lowercase">{card.domain}</span>
           </div>
         ) : card.kind === "tweet" ? (
           <blockquote className="px-6 py-7">
-            <p className="text-[14px] leading-[1.8]">{meta.description ?? card.title}</p>
-            <cite className="text-muted-foreground mt-4 block text-[11px] tracking-[0.2em] not-italic lowercase">
+            <p className="text-[16px] leading-[1.8]">{meta.description ?? card.title}</p>
+            <cite className="text-muted-foreground mt-4 block text-[13px] tracking-[0.2em] not-italic lowercase">
               {meta.author ?? card.domain}
             </cite>
           </blockquote>
@@ -80,29 +92,32 @@ export function CardTile({ card, onOpen }: { card: Card; onOpen: (card: Card) =>
               <Image src={image} alt="" width={56} height={56} unoptimized className="size-14 rounded-full object-cover" />
             ) : null}
             <div className="min-w-0">
-              <h3 className="font-display text-[15px] tracking-wide">{card.title ?? card.note}</h3>
+              <h3 className="font-display text-[17px] tracking-wide">{card.title ?? card.note}</h3>
               {meta.description ? (
-                <p className="text-muted-foreground mt-1 line-clamp-2 text-[12px] leading-relaxed">{meta.description}</p>
+                <p className="text-muted-foreground mt-1 line-clamp-2 text-[14px] leading-relaxed">{meta.description}</p>
               ) : null}
             </div>
           </div>
         ) : card.kind === "quote" ? (
           <blockquote className="px-6 py-7">
-            <p className="font-display text-[17px] leading-[1.9]">
+            <p className="font-display text-[19px] leading-[1.9]">
               <span className="text-primary">「</span>
               {card.content ?? card.note}
               <span className="text-primary">」</span>
             </p>
             {card.domain ? (
-              <cite className="text-muted-foreground mt-4 block text-[11px] tracking-[0.2em] not-italic lowercase">
+              <cite className="text-muted-foreground mt-4 block text-[13px] tracking-[0.2em] not-italic lowercase">
                 {card.domain}
               </cite>
             ) : null}
           </blockquote>
         ) : card.kind === "note" ? (
           <div className="px-6 py-7">
-            {card.title ? <h3 className="font-display mb-3 text-[15px] tracking-wide">{card.title}</h3> : null}
-            <p className="text-[13px] leading-[1.9] whitespace-pre-wrap">{card.note}</p>
+            {card.title ? <h3 className="font-display mb-3 text-[17px] tracking-wide">{card.title}</h3> : null}
+            {/* Long notes fade out at the foot of the tile; the whole note is one press away. */}
+            <div className="note-md note-tile max-h-72 overflow-hidden text-[15px] leading-[1.8]">
+              <NoteBody note={card.note ?? ""} />
+            </div>
           </div>
         ) : image ? (
           <div className="relative">
@@ -121,21 +136,24 @@ export function CardTile({ card, onOpen }: { card: Card; onOpen: (card: Card) =>
                   <Play className="size-9 fill-white/85 text-white/85" strokeWidth={1} />
                 </span>
                 {meta.duration ? (
-                  <span className="absolute right-3 bottom-3 bg-black/65 px-1.5 py-0.5 font-sans text-[10px] tracking-widest text-white">
+                  <span className="absolute right-3 bottom-3 bg-black/65 px-1.5 py-0.5 font-sans text-[12px] tracking-widest text-white">
                     {clock(Number(meta.duration))}
                   </span>
                 ) : null}
               </>
             ) : null}
             {card.kind === "pdf" ? (
-              <span className="absolute right-3 bottom-3 flex items-center gap-1 bg-black/65 px-1.5 py-0.5 font-sans text-[10px] tracking-widest text-white">
+              <span className="absolute right-3 bottom-3 flex items-center gap-1 bg-black/65 px-1.5 py-0.5 font-sans text-[12px] tracking-widest text-white">
                 <FileText className="size-3" strokeWidth={1.5} /> {meta.pages ?? "?"}
               </span>
             ) : null}
             {card.kind !== "image" && card.title ? (
               <div className="border-border/70 border-t px-5 py-4">
-                <h3 className="font-display line-clamp-3 text-[14px] leading-relaxed">{card.title}</h3>
-                <p className="text-muted-foreground mt-2 flex gap-3 text-[10px] tracking-[0.18em] lowercase">
+                <h3 className="font-display line-clamp-3 text-[16px] leading-relaxed">{card.title}</h3>
+                {(card.kind === "article" || card.kind === "pdf") && meta.summary ? (
+                  <p className="text-muted-foreground mt-2 line-clamp-3 text-[14px] leading-relaxed">{meta.summary}</p>
+                ) : null}
+                <p className="text-muted-foreground mt-2 flex gap-3 text-[12px] tracking-[0.18em] lowercase">
                   <span>{card.domain}</span>
                   {meta.price ? <span className="text-primary">{meta.price} {meta.currency}</span> : null}
                   {(card.kind === "article" || card.kind === "recipe") && meta.readingMinutes ? (
@@ -148,22 +166,22 @@ export function CardTile({ card, onOpen }: { card: Card; onOpen: (card: Card) =>
           </div>
         ) : (
           <div className="px-6 py-7">
-            <span className="text-muted-foreground mb-3 block text-[10px] tracking-[0.25em] lowercase">
+            <span className="text-muted-foreground mb-3 block text-[12px] tracking-[0.25em] lowercase">
               {card.domain ?? t("kinds", card.kind)}
             </span>
-            <h3 className="font-display text-[15px] leading-relaxed">{card.title ?? card.url}</h3>
+            <h3 className="font-display text-[17px] leading-relaxed">{card.title ?? card.url}</h3>
             {BYLINE.includes(card.kind) && meta.author ? (
-              <p className="text-muted-foreground mt-2 text-[10px] tracking-[0.18em] lowercase">{meta.author}</p>
+              <p className="text-muted-foreground mt-2 text-[12px] tracking-[0.18em] lowercase">{meta.author}</p>
             ) : null}
             {meta.description ? (
-              <p className="text-muted-foreground mt-3 line-clamp-3 text-[12px] leading-relaxed">{meta.description}</p>
+              <p className="text-muted-foreground mt-3 line-clamp-3 text-[14px] leading-relaxed">{meta.description}</p>
             ) : null}
           </div>
         )}
       </button>
       <figcaption
         className={cn(
-          "text-muted-foreground mt-3 flex items-center gap-2 text-[10px] tracking-[0.22em] lowercase opacity-0 transition-opacity duration-500 group-hover:opacity-100",
+          "text-muted-foreground mt-3 flex items-center gap-2 text-[12px] tracking-[0.22em] lowercase opacity-0 transition-opacity duration-500 group-hover:opacity-100",
           !card.enriched_at && "text-primary opacity-100",
         )}
       >
@@ -177,5 +195,74 @@ export function CardTile({ card, onOpen }: { card: Card; onOpen: (card: Card) =>
         <span className="truncate">{card.enriched_at ? (card.title ?? card.domain ?? t("kinds", card.kind)) : t("board", "settling")}</span>
       </figcaption>
     </figure>
+  )
+}
+
+// Paper, hairline, square corners: the menu is one more sheet on the desk.
+const MENU = "rounded-none border border-border bg-card p-1 shadow-none ring-0 font-sans"
+const ITEM = "rounded-none px-3 py-1.5 text-[14px] tracking-[0.06em] lowercase focus:bg-muted"
+
+/** A right-click (or long-press) on a card: the things you do to it, without opening it. */
+export function TileMenu({
+  card,
+  spaces,
+  children,
+  onOpen,
+  onPin,
+  onSpace,
+  onLetGo,
+}: {
+  card: Card
+  spaces: Space[]
+  children: React.ReactNode
+  onOpen: (card: Card) => void
+  onPin: (card: Card) => void
+  onSpace: (card: Card, space: Space) => void
+  onLetGo: (card: Card) => void
+}) {
+  const t = useT()
+  const folders = spaces.filter((space) => !space.query)
+  return (
+    <ContextMenu>
+      <ContextMenuTrigger render={<div />}>{children}</ContextMenuTrigger>
+      <ContextMenuContent className={cn(MENU, "min-w-48")}>
+        <ContextMenuItem className={ITEM} onClick={() => onOpen(card)}>
+          {t("boardUi", "open")}
+        </ContextMenuItem>
+        <ContextMenuItem className={ITEM} onClick={() => onPin(card)}>
+          {t("boardUi", card.pinned_at ? "unpin" : "pin")}
+        </ContextMenuItem>
+        {folders.length ? (
+          <ContextMenuSub>
+            <ContextMenuSubTrigger className={ITEM}>{t("boardUi", "addTo")}</ContextMenuSubTrigger>
+            <ContextMenuSubContent className={MENU}>
+              {folders.map((space) => (
+                <ContextMenuItem key={space.id} className={ITEM} onClick={() => onSpace(card, space)}>
+                  {space.name}
+                </ContextMenuItem>
+              ))}
+            </ContextMenuSubContent>
+          </ContextMenuSub>
+        ) : null}
+        <ContextMenuItem className={ITEM} onClick={() => onOpen(card)}>
+          {t("boardUi", "tie")}
+        </ContextMenuItem>
+        {card.url ? (
+          <ContextMenuItem
+            className={ITEM}
+            onClick={async () => {
+              await navigator.clipboard.writeText(card.url!)
+              notify(t("boardUi", "copied"))
+            }}
+          >
+            {t("boardUi", "copyLink")}
+          </ContextMenuItem>
+        ) : null}
+        <ContextMenuSeparator className="bg-border mx-0" />
+        <ContextMenuItem className={ITEM} variant="destructive" onClick={() => onLetGo(card)}>
+          {t("boardUi", "letGo")}
+        </ContextMenuItem>
+      </ContextMenuContent>
+    </ContextMenu>
   )
 }

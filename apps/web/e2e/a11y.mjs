@@ -24,7 +24,12 @@ for (const view of VIEWS) for (const theme of THEMES) {
     page.on("console", (m) => m.type() === "error" && errors.push(m.text().slice(0, 160)))
     page.on("pageerror", (e) => errors.push("PAGEERROR " + e.message.slice(0, 160)))
     const res = await page.goto(BASE + route, { waitUntil: "load" }).catch((e) => ({ status: () => "ERR " + e.message }))
-    await page.waitForTimeout(3500) // let page-in and reveal animations settle before axe measures contrast
+    // Let the page be born out of zen's drop (and every finite animation end) before axe measures contrast.
+    await page.waitForTimeout(500)
+    await page
+      .waitForFunction(() => document.getAnimations().every((a) => a.playState !== "running" || a.effect?.getTiming().iterations === Infinity), null, { timeout: 12000 })
+      .catch(() => {})
+    await page.waitForTimeout(300)
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
     let axe = []
     if (theme === "light" || view.name === "desk") {

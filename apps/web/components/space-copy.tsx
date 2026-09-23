@@ -1,5 +1,7 @@
 "use client"
 
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia } from "@workspace/ui/components/empty"
+import { Droplet } from "@/components/droplet"
 import { useT } from "@/components/locale"
 
 export function SpacesHeading() {
@@ -10,16 +12,21 @@ export function SpacesHeading() {
 export function SpacesEmpty() {
   const t = useT()
   return (
-    <p className="text-muted-foreground font-display mt-10 px-6 text-[15px] leading-relaxed sm:px-12">
-      {t("spaces", "none")}
-    </p>
+    <Empty className="mt-10 items-start px-6 text-start sm:px-12">
+      <EmptyHeader className="items-start text-start">
+        <EmptyMedia>
+          <Droplet ink="shell" expression="sleepy" className="h-8 w-6" motion="idle" />
+        </EmptyMedia>
+        <EmptyDescription className="font-display text-[17px] leading-relaxed">{t("spaces", "none")}</EmptyDescription>
+      </EmptyHeader>
+    </Empty>
   )
 }
 
 export function SpaceMeta({ query, count }: { query: string | null; count: number }) {
   const t = useT()
   return (
-    <p className="text-muted-foreground mt-2 text-[10px] tracking-[0.2em] lowercase">
+    <p className="text-muted-foreground mt-2 text-[12px] tracking-[0.2em] lowercase">
       {query ? `${t("spaces", "gathers")}: ${query}` : `${count} ${t("spaces", "cards")}`}
     </p>
   )

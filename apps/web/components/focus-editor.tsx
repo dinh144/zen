@@ -48,7 +48,7 @@ export function FocusEditor() {
         data-sole
         className="font-display placeholder:text-muted-foreground/60 min-h-[60vh] w-full flex-1 resize-none bg-transparent text-[22px] leading-[2.1] outline-none"
       />
-      <p className="text-muted-foreground flex items-center gap-3 text-[10px] tracking-[0.22em] lowercase">
+      <p className="text-muted-foreground flex items-center gap-3 text-[12px] tracking-[0.22em] lowercase">
         <Droplet expression={mood} ink={ink} className="h-5 w-[15px]" motion="idle" />
         {saved ? t("focus", "saved") : t("focus", "hint")}
       </p>

@@ -9,6 +9,8 @@ const kindOf = (mime: string, name: string): Kind => {
   const extension = path.extname(name).toLowerCase()
   if (mime === "application/pdf" || extension === ".pdf") return "pdf"
   if (mime.startsWith("video/") || [".mp4", ".webm", ".mov", ".m4v"].includes(extension)) return "video"
+  // A voice note becomes a note once it is transcribed.
+  if (mime.startsWith("audio/")) return "note"
   if (mime.startsWith("image/") || [".png", ".jpg", ".jpeg", ".gif", ".webp", ".avif", ".svg"].includes(extension))
     return "image"
   return "file"

@@ -44,8 +44,9 @@ from the product we studied; the study lives in `docs/mymind-inventory.md`.
   `soft-light` at night) so the background reads as fibre, not as a flat fill.
 - **Shape and surfaces**: radius 2px. A card is a `.sheet` — hairline border, a single
   1px ink shadow, lifting 2px on hover. No ring stacks, no gradients, no glass.
-- **Ma**: 2.25rem gutters between cards, 3–4 masonry columns instead of 5–6, 4rem of
-  air above the search line. Density is a choice, not the default (`tighten the board`).
+- **Rhythm (mymind's layout, zen's skin; Dinh, 2026-09-23)**: a full wall of cards, 1.5rem
+  gutters, up to 5 columns (7 when tightened), a 44px search line. Air comes from the paper and
+  the quiet chrome, not from wide gutters.
 - **The drop**: zen's mark is a drop of ink with a face (silhouette drawn here; the idea
   is borrowed from bloub.vercel.app, the geometry is not). It falls in on load, squashes
   on landing, then breathes. Hovering it sends a ring out, the way a drop does on water.

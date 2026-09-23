@@ -126,9 +126,26 @@
   body {
     @apply bg-background text-foreground;
     }
-  button:not(:disabled), [role="button"]:not(:disabled) {
+  button:not(:disabled), [role="button"]:not(:disabled), summary, label[for], select {
     cursor: pointer;
     }
+  button:disabled, [aria-disabled="true"] {
+    cursor: not-allowed;
+    }
+  /* Scrollbars: a hairline of the border ink that darkens under the pointer, never a grey slab. */
+  html {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in oklab, var(--muted-foreground) 45%, transparent) transparent;
+    }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: color-mix(in oklab, var(--muted-foreground) 40%, transparent) padding-box;
+    border: 3px solid transparent;
+    border-radius: 999px;
+    }
+  ::-webkit-scrollbar-thumb:hover { background-color: var(--muted-foreground); }
+  ::selection { background: color-mix(in oklab, var(--primary) 22%, transparent); color: inherit; }
 }
 /* ---- zen: sumi-e on washi ----------------------------------------------
    The name is 禅. Ink on paper, one vermilion seal, and ma — the empty space
@@ -193,6 +210,15 @@ html[lang="vi"] {
   --font-display: var(--font-display-vi);
   --font-sans: var(--font-sans-vi);
 }
+html[lang="ko"] {
+  --font-display: var(--font-display-ko);
+  --font-sans: var(--font-sans-ko);
+}
+html[lang="zh"] {
+  --font-display: var(--font-display-zh);
+  --font-sans: var(--font-sans-zh);
+}
+/* Japanese wears the Zen family as-is — it is a Japanese-designed font, no swap needed. */
 
 /* Washi grain: fibre in the paper, not a texture image. */
 body {
@@ -213,21 +239,23 @@ body::before {
 body > * { position: relative; z-index: 1; }
 
 /* Ma: the board breathes. Columns are wide and the gutters are wider. */
+/* mymind's rhythm, zen's skin: a full wall of cards with narrow gutters; "tighten" goes denser still. */
 .masonry {
-  column-gap: 2.25rem;
+  column-gap: 1.5rem;
   column-count: 1;
 }
 @media (min-width: 640px) { .masonry { column-count: 2; } }
 @media (min-width: 1024px) { .masonry { column-count: 3; } }
-@media (min-width: 1536px) { .masonry { column-count: 4; } }
-.masonry.dense { column-count: 2; column-gap: 1.25rem; }
-@media (min-width: 1024px) { .masonry.dense { column-count: 4; } }
-@media (min-width: 1536px) { .masonry.dense { column-count: 6; } }
+@media (min-width: 1280px) { .masonry { column-count: 4; } }
+@media (min-width: 1600px) { .masonry { column-count: 5; } }
+.masonry.dense { column-count: 2; column-gap: 1rem; }
+@media (min-width: 1024px) { .masonry.dense { column-count: 5; } }
+@media (min-width: 1600px) { .masonry.dense { column-count: 7; } }
 .masonry > * {
   break-inside: avoid;
-  margin-bottom: 2.25rem;
+  margin-bottom: 1.5rem;
 }
-.masonry.dense > * { margin-bottom: 1.25rem; }
+.masonry.dense > * { margin-bottom: 1rem; }
 
 /* A card is a sheet laid on the desk: hairline edge, one soft ink shadow. */
 .sheet {
@@ -297,12 +325,16 @@ a:hover .drop-ring,
 button:hover .drop-ring { animation: ring-out 700ms cubic-bezier(0.22, 1, 0.36, 1); }
 
 /* Cards arrive the way ink spreads on paper: from beneath, unhurried. */
+/* Cards bleed in like ink on washi: a blot that sharpens into the card. */
 @keyframes settle-in {
-  from { opacity: 0; transform: translateY(14px); }
-  to { opacity: 1; transform: none; }
+  from { opacity: 0; transform: scale(0.92); filter: blur(10px) contrast(1.6); border-radius: 40%; }
+  55% { opacity: 1; filter: blur(2px) contrast(1.15); }
+  to { opacity: 1; transform: none; filter: none; border-radius: 0; }
 }
+
 .settle { opacity: 0; }
 .settle.in { animation: settle-in 700ms cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+.settle.in.now { animation: none; opacity: 1; }
 
 /* A saved card blooms once, like a drop hitting the page. */
 @keyframes ink-bloom {
@@ -396,11 +428,7 @@ button:hover .drop-ring { animation: ring-out 700ms cubic-bezier(0.22, 1, 0.36, 
 /* ---- motion, everywhere it earns its place ---------------------------- */
 
 /* Every page arrives like a page being laid down. */
-@keyframes page-in {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: none; }
-}
-[data-page] { animation: page-in 420ms cubic-bezier(0.22, 1, 0.36, 1); }
+/* Pages do not fade in: the ink transition and the moving cards carry arrivals. */
 
 /* Theme changes are a wash, not a switch. */
 body, .sheet, nav a, aside a, aside button {
@@ -510,4 +538,106 @@ textarea[data-sole]:focus-visible { outline: none; }
 
 @media (prefers-reduced-motion: reduce) {
   .demo-tile { animation: none; opacity: 1; }
+}
+
+/* ---- Tab changes: zen's drop gathers the page and scatters the next one (lib/ink-flow.ts). ---- */
+.ink-hero {
+  position: fixed;
+  z-index: 61;
+  color: var(--primary);
+  pointer-events: none;
+  will-change: transform;
+}
+/* Liquid ink: beads in this layer melt into each other where they touch (the #zen-goo filter). */
+#ink-goo {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  filter: url(#zen-goo);
+}
+.ink-bead {
+  position: absolute;
+  border-radius: 50%;
+  background: var(--primary);
+  will-change: transform;
+}
+::view-transition-group(.morph) {
+  animation-duration: 760ms;
+  animation-timing-function: cubic-bezier(0.65, 0, 0.35, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(.morph) { animation: none; }
+}
+
+/* ---- Notes rendered from Markdown: the same quiet ink, with room for tables and code. ---- */
+.note-md > * + * { margin-top: 0.9em; }
+.note-md h1, .note-md h2, .note-md h3 { font-weight: 500; letter-spacing: 0.02em; line-height: 1.4; margin-top: 1.4em; }
+.note-md h1 { font-size: 1.35em; }
+.note-md h2 { font-size: 1.2em; }
+.note-md h3 { font-size: 1.05em; }
+.note-md ul:not(.todos) { list-style: disc; padding-inline-start: 1.3em; }
+.note-md ol { list-style: decimal; padding-inline-start: 1.3em; }
+.note-md li::marker { color: var(--muted-foreground); }
+.note-md a { color: var(--primary); text-decoration: underline; text-underline-offset: 4px; text-decoration-color: color-mix(in oklab, var(--primary) 40%, transparent); }
+.note-md blockquote { border-inline-start: 1px solid var(--primary); padding-inline-start: 1em; color: var(--muted-foreground); }
+.note-md code { font-family: ui-monospace, "SFMono-Regular", Menlo, monospace; font-size: 0.86em; background: var(--muted); padding: 0.1em 0.35em; }
+.note-md pre { background: var(--muted); padding: 1em 1.1em; overflow-x: auto; line-height: 1.6; }
+.note-md pre code { background: none; padding: 0; }
+.note-md table { width: 100%; border-collapse: collapse; font-family: var(--font-sans); font-size: 0.92em; display: block; overflow-x: auto; }
+.note-md th, .note-md td { border-bottom: 1px solid var(--border); padding: 0.45em 0.9em 0.45em 0; text-align: start; }
+.note-md th { font-weight: 500; color: var(--muted-foreground); font-size: 0.85em; letter-spacing: 0.08em; }
+.note-md hr { border: 0; border-top: 1px solid var(--border); }
+.note-md del { color: var(--muted-foreground); }
+.note-tile { mask-image: linear-gradient(to bottom, #000 14rem, transparent 18rem); }
+.note-tile pre { font-size: 11px; padding: 0.7em 0.8em; overflow: hidden; } /* a tile is a preview: its code never scrolls (the card opens it) */
+.note-tile > ul:first-child { margin-top: 0; }
+
+/* ---- shadcn in zen's skin: paper sheets, hairlines, no rounded chrome, no shadows. ---- */
+[data-slot="toast"] { border-radius: 0; box-shadow: none; background: var(--card); border-color: var(--border); }
+[data-slot="toast"] [data-slot="toast-action"] { border-radius: 0; font-size: 11px; letter-spacing: 0.18em; text-transform: lowercase; color: var(--primary); }
+/* Surfaces that float (sheets, drawers, menus, popovers, dialogs, tooltips) are paper: square, one hairline. */
+:is([data-slot="sheet-content"], [data-slot="drawer-content"], [data-slot="drawer-popup"], [data-slot="popover-content"],
+  [data-slot="select-content"], [data-slot="hover-card-content"], [data-slot="context-menu-content"],
+  [data-slot="context-menu-sub-content"], [data-slot="alert-dialog-content"]) {
+  border-radius: 0;
+  box-shadow: none;
+  background: var(--card);
+  color: var(--card-foreground);
+  border: 1px solid var(--border);
+  --tw-ring-shadow: 0 0 #0000;
+}
+[data-slot="sheet-content"][data-side="right"] { border-width: 0 0 0 1px; }
+[data-slot="sheet-content"][data-side="left"] { border-width: 0 1px 0 0; }
+:is([data-slot="drawer-content"], [data-slot="drawer-popup"]) { border-width: 1px 0 0; }
+:is([data-slot="sheet-overlay"], [data-slot="drawer-overlay"], [data-slot="alert-dialog-overlay"]) {
+  background: color-mix(in oklab, var(--background) 55%, transparent);
+  backdrop-filter: blur(2px);
+}
+[data-slot="tooltip-content"] { border-radius: 0; box-shadow: none; background: var(--foreground); color: var(--background); }
+/* Rows inside menus and lists: no pills; the active one is inked, not filled. */
+:is([data-slot="select-item"], [data-slot="context-menu-item"], [data-slot="context-menu-sub-trigger"],
+  [data-slot="context-menu-checkbox-item"], [data-slot="context-menu-radio-item"]) { border-radius: 0; }
+:is([data-slot="select-item"], [data-slot="context-menu-item"])[data-highlighted] { background: var(--muted); color: var(--primary); }
+/* Controls: square, a hairline at rest, ink when chosen or focused. */
+:is([data-slot="select-trigger"], [data-slot="button"], [data-slot="toggle"], [data-slot="toggle-group-item"],
+  [data-slot="calendar"] button, [data-slot="alert-dialog-cancel"], [data-slot="alert-dialog-action"]) {
+  border-radius: 0;
+  box-shadow: none;
+}
+[data-slot="select-trigger"] { background: transparent; border: 0; border-bottom: 1px solid var(--border); padding-inline: 0; }
+[data-slot="select-trigger"]:focus-visible { border-bottom-color: var(--primary); box-shadow: none; outline: none; }
+:is([data-slot="toggle"], [data-slot="toggle-group-item"])[data-pressed] { background: transparent; color: var(--primary); box-shadow: inset 0 -1px 0 var(--primary); }
+[data-slot="calendar"] [data-selected="true"] button, [data-slot="calendar"] button[data-selected-single="true"] { background: var(--primary); color: var(--primary-foreground); }
+[data-slot="switch"] { border-radius: 0; }
+[data-slot="switch-thumb"] { border-radius: 0; }
+[data-slot="switch"][data-checked] { background: var(--primary); }
+:is([data-slot="slider-track"], [data-slot="progress-track"]) { border-radius: 0; height: 1px; background: var(--border); overflow: visible; }
+:is([data-slot="slider-range"], [data-slot="progress-indicator"]) { border-radius: 0; background: var(--primary); }
+[data-slot="slider-thumb"] { border-radius: 0; box-shadow: none; border: 1px solid var(--primary); background: var(--card); }
+[data-slot="skeleton"] { border-radius: 0; background: color-mix(in oklab, var(--muted-foreground) 12%, transparent); }
+[data-slot="empty"] { border-radius: 0; }
+:is([data-slot="button"], [data-slot="select-trigger"], [data-slot="toggle-group-item"], [data-slot="switch"], [data-slot="slider-thumb"]):focus-visible {
+  outline: none;
+  box-shadow: 0 1px 0 var(--primary);
 }

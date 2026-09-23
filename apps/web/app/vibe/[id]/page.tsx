@@ -11,5 +11,18 @@ export default async function VibePage({ params }: { params: Promise<{ id: strin
   if (!me) redirect("/login")
   const { id } = await params
   const [card, cards, spaces] = await Promise.all([getCard(me, id), sameVibe(me, id), listSpaces(me)])
-  return <Board initialCards={cards} spaces={spaces} heading={[`cùng khí với ${card?.title ?? "thẻ này"}`, `same air as ${card?.title ?? "this"}`]} mode="static" />
+  return (
+    <Board
+      initialCards={cards}
+      spaces={spaces}
+      heading={[
+        `cùng khí với ${card?.title ?? "thẻ này"}`,
+        `same air as ${card?.title ?? "this"}`,
+        `같은 공기 · ${card?.title ?? "이 카드"}`,
+        `与${card?.title ?? "这张卡片"}同一种气息`,
+        `${card?.title ?? "このカード"}と同じ空気`,
+      ]}
+      mode="static"
+    />
+  )
 }

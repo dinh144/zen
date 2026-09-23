@@ -1,6 +1,5 @@
-import { after } from "next/server"
 import { createCard, spend } from "@/lib/cards"
-import { enrichCard } from "@/lib/enrich"
+import { queueCard } from "@/lib/jobs"
 import { storeUpload } from "@/lib/upload"
 import { currentUser } from "@/lib/user"
 
@@ -22,6 +21,6 @@ export async function POST(request: Request) {
     note: url ? null : text || null,
   })
 
-  after(() => enrichCard(card.id))
+  await queueCard(card.id, me)
   return Response.redirect(new URL("/", request.url), 303)
 }

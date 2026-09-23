@@ -34,7 +34,7 @@ export default async function ReadPage({ params }: { params: Promise<{ id: strin
         </a>
       ) : null}
       <article
-        className="prose-zen mt-12 text-[17px] leading-[1.9]"
+        className="prose-zen mt-12 text-[19px] leading-[1.9]"
         dangerouslySetInnerHTML={{ __html: sanitizeArticle(row.article_html) }}
       />
     </div>

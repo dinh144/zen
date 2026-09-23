@@ -68,3 +68,35 @@ describe("saved links", () => {
     expect(fromHtml(`<A HREF="javascript:alert(1)">x</A><A HREF="https://ok.com">ok</A>`).map((i) => i.url)).toEqual(["https://ok.com"])
   })
 })
+
+import { todosOf, toggleTodo } from "./checklist"
+
+describe("to-dos in a note", () => {
+  test("reads and flips checklist lines, leaves prose alone", () => {
+    const note = "trip\n- [ ] book flight\n[x] pack\nnot a task"
+    expect(todosOf(note)).toEqual([
+      { index: 1, done: false, text: "book flight" },
+      { index: 2, done: true, text: "pack" },
+    ])
+    expect(toggleTodo(note, 1)).toBe("trip\n- [x] book flight\n[x] pack\nnot a task")
+    expect(toggleTodo(note, 3)).toBe(note)
+  })
+})
+
+test("embeds only known players", async () => {
+  const { embedOf } = await import("./embed")
+  expect(embedOf("https://www.youtube.com/watch?v=abc123")?.src).toBe("https://www.youtube-nocookie.com/embed/abc123")
+  expect(embedOf("https://youtu.be/xyz")?.src).toBe("https://www.youtube-nocookie.com/embed/xyz")
+  expect(embedOf("https://youtube.com/shorts/s1")?.tall).toBe(true)
+  expect(embedOf("https://vimeo.com/76979871")?.src).toBe("https://player.vimeo.com/video/76979871")
+  expect(embedOf("https://open.spotify.com/album/1ATL")?.audio).toBe(true)
+  expect(embedOf("https://example.com/watch?v=1")).toBeNull()
+  expect(embedOf("javascript:alert(1)")).toBeNull()
+})
+
+test("wiki links", async () => {
+  const { wikiTitles, withWikiLinks } = await import("./wiki")
+  expect(wikiTitles("see [[SQS vs SNS]] and [[ Japan ]] and [[SQS vs SNS]]")).toEqual(["SQS vs SNS", "Japan"])
+  expect(withWikiLinks("a [[B c]]")).toBe("a [B c](#wiki:B%20c)")
+  expect(wikiTitles("[[]] [[a\nb]]")).toEqual([])
+})

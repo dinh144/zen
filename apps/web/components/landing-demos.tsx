@@ -66,8 +66,8 @@ export function CaptureDemo() {
           className="sheet settle in flex items-center gap-4 px-5 py-4"
           style={{ animationDelay: `${index * 260}ms` }}
         >
-          <span className="text-primary w-12 shrink-0 text-[10px] tracking-[0.2em] lowercase">{label}</span>
-          <span className="text-muted-foreground font-display text-[14px]">{value}</span>
+          <span className="text-primary w-12 shrink-0 text-[12px] tracking-[0.2em] lowercase">{label}</span>
+          <span className="text-muted-foreground font-display text-[16px]">{value}</span>
           <Droplet
             expression={index === 2 ? "excited" : "attentive"}
             ink={["indigo", "jade", "sumi"][index] as "indigo"}
@@ -141,8 +141,8 @@ export function ThinkingDemo() {
     <div className="sheet divide-border divide-y" aria-hidden>
       {rows.map(([label, value], index) => (
         <div key={label} className="settle in grid grid-cols-[110px_1fr] gap-4 px-6 py-4" style={{ animationDelay: `${index * 220}ms` }}>
-          <span className="text-muted-foreground text-[10px] tracking-[0.2em] lowercase">{label}</span>
-          <span className="text-[13px]">{value}</span>
+          <span className="text-muted-foreground text-[12px] tracking-[0.2em] lowercase">{label}</span>
+          <span className="text-[15px]">{value}</span>
         </div>
       ))}
     </div>
@@ -162,7 +162,7 @@ export function DriftDemo() {
             />
             <Lines widths={[70, 45]} />
           </div>
-          <div className="text-muted-foreground mt-2 flex gap-4 text-[9px] tracking-[0.2em] lowercase">
+          <div className="text-muted-foreground mt-2 flex gap-4 text-[11px] tracking-[0.2em] lowercase">
             <span className="text-primary">giữ</span>
             <span>buông</span>
           </div>

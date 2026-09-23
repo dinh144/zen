@@ -37,9 +37,9 @@ export function Landing() {
       <nav className="flex items-center justify-between px-6 pt-8 sm:px-12">
         <span className="inline-flex items-center gap-2.5">
           <Droplet expression="neutral" ink={ink} className="h-6 w-[18px]" motion="fall" />
-          <span className="font-display text-base tracking-[0.3em] lowercase">zen</span>
+          <span className="font-display text-base tracking-[0.3em] lowercase">zen ai</span>
         </span>
-        <div className="flex items-center gap-6 text-[11px] tracking-[0.2em] lowercase">
+        <div className="flex items-center gap-6 text-[13px] tracking-[0.2em] lowercase">
           <button
             onClick={() => setLocale(locale === "vi" ? "en" : "vi")}
             className="text-muted-foreground hover:text-foreground transition-colors"
@@ -65,10 +65,10 @@ export function Landing() {
           <h1 className="font-display max-w-2xl text-4xl leading-[1.35] tracking-wide sm:text-[52px]">
             {t("landing", "tagline")}
           </h1>
-          <p className="text-muted-foreground mt-8 max-w-lg text-[15px] leading-[1.95]">{t("landing", "sub")}</p>
+          <p className="text-muted-foreground mt-8 max-w-lg text-[17px] leading-[1.95]">{t("landing", "sub")}</p>
           <Link
             href="/login"
-            className="border-primary text-primary hover:bg-primary hover:text-primary-foreground mt-12 inline-flex items-center gap-3 border px-6 py-3 text-[10px] tracking-[0.28em] lowercase transition-colors duration-500"
+            className="border-primary text-primary hover:bg-primary hover:text-primary-foreground mt-12 inline-flex items-center gap-3 border px-6 py-3 text-[12px] tracking-[0.28em] lowercase transition-colors duration-500"
           >
             <Droplet expression="excited" ink="current" className="h-4 w-3" motion="idle" />
             {t("landing", "enter")}
@@ -80,7 +80,7 @@ export function Landing() {
       </header>
 
       <section className="border-border/70 border-y px-6 py-14 sm:px-12">
-        <p className="text-muted-foreground mb-5 text-[10px] tracking-[0.25em] lowercase">{t("landing", "refuseTitle")}</p>
+        <p className="text-muted-foreground mb-5 text-[12px] tracking-[0.25em] lowercase">{t("landing", "refuseTitle")}</p>
         <p className="font-display text-xl leading-[1.8] tracking-wide sm:text-[26px]">{t("landing", "refuse")}</p>
       </section>
 
@@ -89,7 +89,7 @@ export function Landing() {
           <section className="border-border/70 grid gap-10 border-b px-6 py-20 sm:px-12 lg:grid-cols-[1fr_1.15fr] lg:items-center">
             <div>
               <h2 className="font-display text-2xl leading-snug tracking-wide">{t("landing", block.title)}</h2>
-              <p className="text-muted-foreground mt-5 max-w-md text-[15px] leading-[1.95]">{t("landing", block.body)}</p>
+              <p className="text-muted-foreground mt-5 max-w-md text-[17px] leading-[1.95]">{t("landing", block.body)}</p>
             </div>
             {block.demo}
           </section>
@@ -99,12 +99,12 @@ export function Landing() {
       <Reveal>
         <section className="border-border/70 border-b px-6 py-20 sm:px-12">
           <h2 className="font-display text-2xl tracking-wide">{t("landing", "kindsTitle")}</h2>
-          <p className="text-muted-foreground mt-5 max-w-xl text-[15px] leading-[1.95]">{t("landing", "kindsBody")}</p>
+          <p className="text-muted-foreground mt-5 max-w-xl text-[17px] leading-[1.95]">{t("landing", "kindsBody")}</p>
           <ul className="mt-10 flex flex-wrap gap-x-8 gap-y-5">
             {KINDS.map((kind) => (
               <li key={kind} className="flex items-center gap-2">
                 <Droplet expression="neutral" ink={KIND_INK[kind]!} className="h-4 w-3" motion="still" />
-                <span className="text-muted-foreground text-[11px] tracking-[0.18em] lowercase">{t("kinds", kind)}</span>
+                <span className="text-muted-foreground text-[13px] tracking-[0.18em] lowercase">{t("kinds", kind)}</span>
               </li>
             ))}
           </ul>
@@ -115,15 +115,15 @@ export function Landing() {
         <section className="border-border/70 grid gap-10 border-b px-6 py-20 sm:px-12 lg:grid-cols-[1fr_1fr]">
           <div>
             <h2 className="font-display text-2xl leading-snug tracking-wide">{t("landing", "localTitle")}</h2>
-            <p className="text-muted-foreground mt-5 max-w-md text-[15px] leading-[1.95]">{t("landing", "localBody")}</p>
+            <p className="text-muted-foreground mt-5 max-w-md text-[17px] leading-[1.95]">{t("landing", "localBody")}</p>
           </div>
-          <p className="font-display self-end text-[13px] tracking-[0.2em] lowercase">{t("landing", "stack")}</p>
+          <p className="font-display self-end text-[15px] tracking-[0.2em] lowercase">{t("landing", "stack")}</p>
         </section>
       </Reveal>
 
       <section className="border-border/70 border-b px-6 py-20 sm:px-12">
         <h2 className="font-display text-2xl tracking-wide">{t("landing", "moodsTitle")}</h2>
-        <p className="text-muted-foreground mt-5 max-w-xl text-[15px] leading-[1.95]">{t("landing", "moodsBody")}</p>
+        <p className="text-muted-foreground mt-5 max-w-xl text-[17px] leading-[1.95]">{t("landing", "moodsBody")}</p>
         <div className="mt-12 flex flex-wrap gap-6">
           {EXPRESSIONS.map((expression, index) => (
             <Droplet
@@ -140,7 +140,7 @@ export function Landing() {
 
       <Reveal>
         <section className="border-border/70 border-b px-6 py-16 sm:px-12">
-          <p className="text-muted-foreground mb-4 text-[10px] tracking-[0.25em] lowercase">{t("landing", "forTitle")}</p>
+          <p className="text-muted-foreground mb-4 text-[12px] tracking-[0.25em] lowercase">{t("landing", "forTitle")}</p>
           <p className="font-display text-xl leading-[1.8] tracking-wide">{t("landing", "forList")}</p>
         </section>
       </Reveal>
@@ -150,13 +150,13 @@ export function Landing() {
         <h2 className="font-display max-w-2xl text-3xl leading-snug tracking-wide">{t("landing", "ctaTitle")}</h2>
         <Link
           href="/login"
-          className="border-primary text-primary hover:bg-primary hover:text-primary-foreground inline-flex items-center gap-3 border px-6 py-3 text-[10px] tracking-[0.28em] lowercase transition-colors duration-500"
+          className="border-primary text-primary hover:bg-primary hover:text-primary-foreground inline-flex items-center gap-3 border px-6 py-3 text-[12px] tracking-[0.28em] lowercase transition-colors duration-500"
         >
           {t("landing", "enter")}
         </Link>
       </section>
 
-      <footer className="border-border/70 flex flex-wrap items-center justify-between gap-4 border-t px-6 py-12 text-[10px] tracking-[0.22em] lowercase sm:px-12">
+      <footer className="border-border/70 flex flex-wrap items-center justify-between gap-4 border-t px-6 py-12 text-[12px] tracking-[0.22em] lowercase sm:px-12">
         <span className="text-muted-foreground">{t("landing", "footer")}</span>
         <span className="text-muted-foreground">禅</span>
       </footer>

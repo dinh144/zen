@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next"
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "zen",
-    short_name: "zen",
+    name: "zen ai",
+    short_name: "zen ai",
     start_url: "/",
     display: "standalone",
     background_color: "#f4f1ea",
