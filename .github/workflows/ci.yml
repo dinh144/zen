@@ -18,6 +18,7 @@ jobs:
           path: ~/.local/bin/oasdiff
           key: oasdiff-${{ env.OASDIFF_VERSION }}
       - run: |
+          mkdir -p "$HOME/.local/bin"
           test -x "$HOME/.local/bin/oasdiff" || curl -fsSL https://raw.githubusercontent.com/oasdiff/oasdiff/main/install.sh | INSTALL_DIR="$HOME/.local/bin" version="$OASDIFF_VERSION" sh
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - run: |
