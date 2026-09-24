@@ -3,20 +3,43 @@ import { JSDOM } from "jsdom"
 
 const purify = createDOMPurify(new JSDOM("").window)
 
-/** Saved articles come from any page on the web: strip scripts, handlers and javascript: links. */
-export function sanitizeArticle(html: string) {
-  // ARIA attributes carry accessible names (aria-label, aria-labelledby) for images and links
-  // that have no visible text of their own — stripping them was failing axe's image-alt/link-name checks.
-  const clean = purify.sanitize(html, { FORBID_TAGS: ["style", "form", "iframe", "object", "embed"], FORBID_ATTR: ["style", "role"] })
-  // Scraped pages routinely drop alt text; an unlabelled image, or a link that is only an
-  // unlabelled image, fails axe's image-alt / link-name checks, so give both a safe fallback.
-  const { document } = new JSDOM(`<body>${clean}</body>`).window
-  for (const img of document.querySelectorAll("img:not([alt])")) img.setAttribute("alt", "")
-  for (const a of document.querySelectorAll("a")) {
-    if (a.textContent?.trim() || a.getAttribute("aria-label")) continue
-    const img = a.querySelector("img")
-    if (img) img.setAttribute("alt", "image")
-    else a.setAttribute("aria-label", "link")
+// Only the one ARIA attribute Reading Mode needs stays allowed: aria-label carries the
+// accessible name for an icon-only link or image a scraped page left unlabelled. Every other
+// aria-* (aria-hidden in particular, which can hide real article text from a screen reader)
+// stays stripped, same as before.
+purify.setConfig({
+  FORBID_TAGS: ["style", "form", "iframe", "object", "embed"],
+  FORBID_ATTR: ["style", "role"],
+  ALLOW_ARIA_ATTR: false,
+  ADD_ATTR: ["aria-label"],
+})
+
+// The current call's article URL, for resolving a relative href to a hostname. Safe as a module
+// variable: sanitize() is synchronous, so no other call's hook can see the wrong value mid-flight.
+let base: string | undefined
+
+// Scraped pages routinely drop alt text, and axe fails an unlabelled image or a link whose only
+// content is one. Fixed up here, inside DOMPurify's own tree walk, rather than a second full
+// re-parse — Reading Mode sanitizes on every view, not just once at save time. Never overwrites
+// an alt or aria-label the source already had; only fills what is genuinely missing, and never
+// bakes in an English word — an unlabelled image gets an empty (decorative) alt, and a link falls
+// back to its own destination's host, never a literal.
+purify.addHook("afterSanitizeAttributes", (node) => {
+  if (node.tagName === "IMG" && !node.hasAttribute("alt")) node.setAttribute("alt", "")
+  if (node.tagName !== "A") return
+  if (node.textContent?.trim() || node.getAttribute("aria-label")?.trim()) return
+  if (node.querySelector("img")?.getAttribute("alt")?.trim()) return
+  const href = node.getAttribute("href")
+  if (!href) return
+  try {
+    node.setAttribute("aria-label", new URL(href, base).hostname)
+  } catch {
+    /* relative href, no article URL to resolve it against: leave it as the source had it */
   }
-  return document.body.innerHTML
+})
+
+/** Saved articles come from any page on the web: strip scripts, handlers and javascript: links. */
+export function sanitizeArticle(html: string, articleUrl?: string) {
+  base = articleUrl
+  return purify.sanitize(html)
 }

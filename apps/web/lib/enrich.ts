@@ -8,8 +8,6 @@ import { readPdf } from "./pdf"
 import { getFile } from "./storage"
 import { languageOf } from "./settings"
 import type { Kind } from "./types"
-import { JSDOM } from "jsdom"
-import { Readability } from "@mozilla/readability"
 
 
 const meta = (html: string, prop: string) => {
@@ -151,11 +149,11 @@ export async function enrichCard(id: string) {
       const image = decode(meta(html, "og:image"))
       content = strip(html).slice(0, 8000)
       // Reading Mode + article backup: keep the readable article, not the page.
-      const readable = readArticle(html, card.url)
+      const readable = await readArticle(html, card.url)
       if (readable) {
         // If it reads like an article, it is one, whatever the page claims.
         if (kind === "link") kind = "article"
-        patch.article_html = sanitizeArticle(readable.html)
+        patch.article_html = sanitizeArticle(readable.html, card.url)
         await sql`INSERT INTO achievements (user_id, key) VALUES (${card.user_id}, 'first-article') ON CONFLICT DO NOTHING`
         content = readable.text.slice(0, 20000)
         if (!title) title = readable.title
@@ -263,8 +261,12 @@ export async function enrichCard(id: string) {
 }
 
 /** Readability gives the article body; we keep the HTML for Reading Mode. */
-function readArticle(html: string, url: string) {
+async function readArticle(html: string, url: string) {
   try {
+    // Loaded here, not at module top: a throw while loading falls into the same catch as a
+    // parse failure instead of breaking every route that imports this file.
+    const { JSDOM } = await import("jsdom")
+    const { Readability } = await import("@mozilla/readability")
     const dom = new JSDOM(html, { url })
     const parsed = new Readability(dom.window.document).parse()
     if (!parsed?.content || (parsed.textContent?.length ?? 0) < 1200) return null

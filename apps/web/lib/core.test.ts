@@ -17,21 +17,37 @@ const contrast = (a: string, b: string) => {
 }
 
 describe("saved articles", () => {
-  test("lose scripts, handlers, javascript: links, frames and role, but keep aria for a11y", () => {
+  test("lose scripts, handlers, javascript: links, frames and role", () => {
     const out = sanitizeArticle(
       `<p onclick="x()">hi</p><img src=x onerror=alert(1)><a href="javascript:alert(1)">l</a>` +
-        `<script>alert(1)</script><svg><script>1</script></svg><iframe src=//e></iframe><ul role="list" aria-label="x"><li>a</li></ul>`,
+        `<script>alert(1)</script><svg><script>1</script></svg><iframe src=//e></iframe><ul role="list"><li>a</li></ul>`,
     )
     expect(out).not.toMatch(/on[a-z]+=|<script|javascript:|<iframe|role=/i)
     expect(out).toContain("<p>hi</p>")
-    expect(out).toContain('aria-label="x"')
   })
 
-  test("gives an unlabelled image empty alt, and a link that is only an image an accessible name", () => {
-    const out = sanitizeArticle(`<img src="a.jpg"><a href="/b"><img src="b.jpg"></a><a href="/c"></a>`)
-    expect(out).toBe(
-      '<img src="a.jpg" alt=""><a href="/b"><img src="b.jpg" alt="image"></a><a href="/c" aria-label="link"></a>',
+  test("keeps aria-label but strips every other aria-* (aria-hidden can hide real article text)", () => {
+    const out = sanitizeArticle(`<ul aria-label="x" aria-hidden="true" aria-describedby="y"><li>a</li></ul>`)
+    expect(out).toBe('<ul aria-label="x"><li>a</li></ul>')
+  })
+
+  test("gives an unlabelled image empty (decorative) alt, and labels an unlabelled link from its own host", () => {
+    const out = sanitizeArticle(
+      `<img src="a.jpg"><a href="https://example.com/x"><img src="b.jpg"></a><a href="https://example.com/y"></a>`,
+      "https://example.com/x",
     )
+    expect(out).toBe(
+      '<img src="a.jpg" alt=""><a href="https://example.com/x" aria-label="example.com"><img src="b.jpg" alt=""></a>' +
+        '<a href="https://example.com/y" aria-label="example.com"></a>',
+    )
+  })
+
+  test("never touches an image's existing alt, and never labels a link an image already names", () => {
+    const out = sanitizeArticle(
+      `<a href="https://acme.com"><img src="logo.png" alt="Acme Corp home"></a>`,
+      "https://acme.com",
+    )
+    expect(out).toBe('<a href="https://acme.com"><img src="logo.png" alt="Acme Corp home"></a>')
   })
 })
 
