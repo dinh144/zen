@@ -27,7 +27,7 @@ export function FocusEditor() {
     setSaved(true)
     feel("excited", 1800)
     router.push("/")
-  }, [router, text])
+  }, [router, text, feel])
 
   React.useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
