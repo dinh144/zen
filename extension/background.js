@@ -3,14 +3,23 @@ const DEFAULT_ENDPOINT = "http://localhost:3000"
 const endpoint = async () =>
   (await chrome.storage.sync.get("endpoint")).endpoint || DEFAULT_ENDPOINT
 
+// A 401 means the session ended (signed out, or the mind switched zen address): forget every
+// local cache so no trace of one mind shows up for another.
+async function guard(res) {
+  if (res.status === 401) await chrome.storage.local.clear()
+  return res
+}
+
 async function save(body) {
   const base = await endpoint()
-  const res = await fetch(`${base}/api/cards`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify(body),
-    credentials: "include",
-  })
+  const res = await guard(
+    await fetch(`${base}/api/cards`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+      credentials: "include",
+    }),
+  )
   chrome.notifications.create({
     type: "basic",
     iconUrl: "icon.png",
@@ -26,7 +35,7 @@ async function saveImage(src, pageUrl) {
   const form = new FormData()
   form.append("file", blob, src.split("/").pop()?.slice(0, 40) || "image.png")
   form.append("url", pageUrl)
-  const res = await fetch(`${base}/api/upload`, { method: "POST", body: form, credentials: "include" })
+  const res = await guard(await fetch(`${base}/api/upload`, { method: "POST", body: form, credentials: "include" }))
   chrome.notifications.create({
     type: "basic",
     iconUrl: "icon.png",
