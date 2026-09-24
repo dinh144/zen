@@ -1,0 +1,5 @@
+<resources>
+    <!-- Window-level theme only (status bar, splash). The Compose content below builds its
+         own sumi-e look on Compose foundation (see DESIGN.md) — no Material components. -->
+    <style name="Theme.Zen" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>

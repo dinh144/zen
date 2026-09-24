@@ -1,0 +1,3 @@
+<resources>
+    <style name="Theme.ZenWear" parent="android:Theme.DeviceDefault" />
+</resources>
