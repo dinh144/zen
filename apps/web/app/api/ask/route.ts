@@ -1,17 +1,18 @@
 import { ask, grill } from "@/lib/agent"
 import { recluster } from "@/lib/clusters"
-import { json } from "@/lib/http"
+import { json, parse } from "@/lib/http"
 import { languageOf } from "@/lib/settings"
 import { withUser } from "@/lib/user"
 import { findOnWeb, lint } from "@/lib/tasks"
 import { runTask } from "@/lib/agent-tools"
+import { AskInput } from "@/lib/schemas"
 
 /** Ask the drop. Tasks it can do on its own right away run here; the rest come back for the UI. */
 export const POST = withUser(async (me, request: Request) => {
-  const { question } = await request.json()
-  if (typeof question !== "string" || !question.trim()) return json({ error: "question" }, 400)
+  const body = parse(AskInput, await request.json())
+  if (!body) return json({ error: "question" }, 400)
   const lang = await languageOf(me)
-  const reply = await ask(me, question.trim().slice(0, 500), lang)
+  const reply = await ask(me, body.question.slice(0, 500), lang)
   if (reply.kind === "task" && reply.task === "organize") {
     // Grouping is a light action: done now, logged, undone by the next recluster.
     return json({ ...reply, done: await recluster(me) })

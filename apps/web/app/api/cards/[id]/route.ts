@@ -16,8 +16,9 @@ import {
 } from "@/lib/cards"
 import { queueCard } from "@/lib/jobs"
 import { wikiTitles } from "@/lib/wiki"
-import { json } from "@/lib/http"
+import { json, parse } from "@/lib/http"
 import { withUser } from "@/lib/user"
+import { CardPatch } from "@/lib/schemas"
 
 export { OPTIONS } from "@/lib/http"
 
@@ -33,9 +34,8 @@ export const GET = withUser(async (me, _: Request, { params }: Params) => {
 
 export const PATCH = withUser(async (me, request: Request, { params }: Params) => {
   const { id } = await params
-  const body = await request.json()
-  if (body.tags !== undefined && !(Array.isArray(body.tags) && body.tags.every((tag: unknown) => typeof tag === "string" && tag.length <= 60)))
-    return json({ error: "bad tags" }, 400)
+  const body = parse(CardPatch, await request.json())
+  if (!body) return json({ error: "invalid card patch" }, 400)
   if (body.pinned !== undefined) {
     await setPinned(me, id, body.pinned)
     if (body.pinned) await unlock(me, "first-pin")
@@ -48,9 +48,7 @@ export const PATCH = withUser(async (me, request: Request, { params }: Params) =
   if (body.unlink) await unlinkCards(me, id, body.unlink)
   if (body.restore) await restoreCard(me, id)
   if (body.resurface !== undefined) {
-    const at = body.resurface ? new Date(body.resurface) : null
-    if (at && Number.isNaN(at.getTime())) return json({ error: "bad date" }, 400)
-    await setResurface(me, id, at)
+    await setResurface(me, id, body.resurface ? new Date(body.resurface) : null)
   }
   const card = await updateCard(me, id, body)
   if (card && body.note !== undefined) {

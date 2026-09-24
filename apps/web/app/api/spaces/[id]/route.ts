@@ -1,6 +1,7 @@
 import { addToSpace, deleteSpace, removeFromSpace, setSpaceShared, spaceCards } from "@/lib/cards"
-import { json } from "@/lib/http"
+import { json, parse } from "@/lib/http"
 import { withUser } from "@/lib/user"
+import { SpacePatch } from "@/lib/schemas"
 
 export { OPTIONS } from "@/lib/http"
 
@@ -13,7 +14,8 @@ export const GET = withUser(async (me, _: Request, { params }: Params) => {
 
 export const PATCH = withUser(async (me, request: Request, { params }: Params) => {
   const { id } = await params
-  const body = await request.json()
+  const body = parse(SpacePatch, await request.json())
+  if (!body) return json({ error: "invalid" }, 400)
   if (body.add) await addToSpace(me, body.add, id)
   if (body.remove) await removeFromSpace(me, body.remove, id)
   if (body.shared !== undefined) return json({ space: await setSpaceShared(me, id, body.shared) })

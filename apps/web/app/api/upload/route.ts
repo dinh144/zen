@@ -2,8 +2,9 @@ import { createCard, spend } from "@/lib/cards"
 import { queueCard } from "@/lib/jobs"
 import { fileSize, getFile, uploadTicket } from "@/lib/storage"
 import { describeUpload, MAX_UPLOAD, storeUpload, uploadName } from "@/lib/upload"
-import { json } from "@/lib/http"
+import { json, parse } from "@/lib/http"
 import { withUser } from "@/lib/user"
+import { UploadDoneInput, UploadTicketInput } from "@/lib/schemas"
 
 export { OPTIONS } from "@/lib/http"
 
@@ -15,6 +16,7 @@ export const POST = withUser(async (me, request: Request) => {
 
   if (request.headers.get("content-type")?.startsWith("application/json")) {
     const body = await request.json()
+    if (!parse(UploadTicketInput, body) && !parse(UploadDoneInput, body)) return json({ error: "invalid" }, 400)
     if (body.intent === "ticket") {
       if (!(Number(body.size) > 0 && Number(body.size) <= MAX_UPLOAD)) return json({ error: "too large" }, 413)
       // The allowance is spent on the ticket, so storage cannot fill without cards being counted.
