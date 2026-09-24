@@ -45,6 +45,7 @@ export const SpaceSchema = z
   .meta({ id: "Space", description: "A named, or query-based smart, group of cards." })
 
 export const ErrorSchema = z.object({ error: z.string() }).meta({ id: "Error" })
+export const Ok = z.object({ ok: z.literal(true) }).meta({ id: "Ok" })
 
 // POST /api/login — the only unauthenticated route.
 export const LoginInput = z.object({ password: z.string() }).meta({ id: "LoginInput" })
@@ -56,7 +57,12 @@ export const CardsQuery = z
     limit: z.coerce.number().int().positive().max(500).optional().catch(undefined),
     after: z.uuid().optional().catch(undefined),
   })
-  .meta({ id: "CardsQuery" })
+  .meta({
+    id: "CardsQuery",
+    description:
+      "limit above 500 (or any other malformed value) is dropped and the default of 60 is used instead — " +
+      "it is not clamped to 500. A repeated query key uses its last value, not its first.",
+  })
 export const CardsListResponse = z.object({ cards: z.array(CardSchema) }).meta({ id: "CardsList" })
 
 // POST /api/cards
@@ -70,7 +76,7 @@ export const CardInput = z
     content: z.string().nullable().optional(),
   })
   .meta({ id: "CardInput", description: "A new card: give a url, a note, a quote, or any mix." })
-export const CardCreatedResponse = z.object({ card: CardSchema }).meta({ id: "CardCreated" })
+export const CardResponse = z.object({ card: CardSchema }).meta({ id: "CardResponse" })
 
 // GET /api/cards/{id}
 export const CardDetailResponse = z
@@ -121,6 +127,40 @@ export const SpacePatchResponse = z.union([z.object({ ok: z.literal(true) }), z.
 // POST /api/ask
 export const AskInput = z.object({ question: z.string().trim().min(1) }).meta({ id: "AskInput", description: "Truncated server-side to 500 characters." })
 
+// The real shape ask() (lib/agent.ts) and the route's own additions (lib/clusters.ts, lib/tasks.ts,
+// lib/agent-tools.ts) can return — replaces a former placeholder of "any object".
+const EdgeSchema = z.object({ source: z.string(), predicate: z.string(), target: z.string(), card_id: z.string().nullable() })
+const GrillOptionSchema = z.object({ label: z.string(), detail: z.string() })
+const GrillQuestionSchema = z.object({ id: z.string(), question: z.string(), options: z.array(GrillOptionSchema) })
+const FindingSchema = z.object({ title: z.string(), url: z.string(), why: z.string() })
+const LintSchema = z.object({
+  duplicates: z.array(z.object({ keep: z.string(), drop: z.string(), similarity: z.number() })),
+  orphans: z.array(z.string()),
+})
+export const AskReply = z
+  .union([
+    z.object({
+      kind: z.literal("answer"),
+      text: z.string(),
+      cards: z.array(z.string()),
+      edges: z.array(EdgeSchema),
+      findings: z.array(FindingSchema).optional(),
+      done: z.array(z.string()).optional(),
+    }),
+    z.object({ kind: z.literal("grill"), text: z.string(), questions: z.array(GrillQuestionSchema) }),
+    z.object({ kind: z.literal("none"), text: z.string() }),
+    z.object({
+      kind: z.literal("task"),
+      text: z.string(),
+      task: z.literal("organize"),
+      topic: z.string(),
+      done: z.object({ machine: z.number(), pinned: z.number(), loose: z.number() }),
+    }),
+    z.object({ kind: z.literal("task"), text: z.string(), task: z.literal("web"), topic: z.string(), findings: z.array(FindingSchema) }),
+    z.object({ kind: z.literal("task"), text: z.string(), task: z.literal("lint"), topic: z.string(), lint: LintSchema }),
+  ])
+  .meta({ id: "AskReply" })
+
 // POST /api/ask/answer
 export const AskAnswerInput = z
   .object({ id: z.string(), answer: z.string() })
@@ -163,5 +203,28 @@ export const UploadDoneInput = z
   .meta({ id: "UploadDoneInput" })
 export const UploadTicketResponse = z.object({ name: z.string(), url: z.string() }).meta({ id: "UploadTicketResponse" })
 
-// DELETE /api/log/{id}
-export const UndoResponse = z.object({ ok: z.literal(true) }).meta({ id: "Undo" })
+// POST /api/mcp — a JSON-RPC 2.0 tool server for AI assistants; save_card is its one write.
+export const McpSearchArgs = z.object({ query: z.string() }).meta({ id: "McpSearchArgs" })
+export const McpGetCardArgs = z.object({ id: z.string() }).meta({ id: "McpGetCardArgs" })
+export const McpSaveCardArgs = z
+  .object({ note: z.string().optional(), url: z.string().optional(), title: z.string().optional() })
+  .meta({ id: "McpSaveCardArgs", description: "note or url is required (checked at runtime, not expressible in this shape)." })
+export const McpAskArgs = z.object({ question: z.string() }).meta({ id: "McpAskArgs" })
+export const McpRequest = z
+  .object({
+    jsonrpc: z.literal("2.0"),
+    id: z.union([z.string(), z.number(), z.null()]).optional(),
+    method: z.string(),
+    params: z.unknown().optional(),
+  })
+  .meta({
+    id: "McpRequest",
+    description:
+      "method: initialize | ping | tools/list | tools/call. For tools/call, params = {name, arguments}; " +
+      "arguments per tool: search_memory -> McpSearchArgs, get_card -> McpGetCardArgs, " +
+      "save_card -> McpSaveCardArgs, ask_zen -> McpAskArgs.",
+  })
+export const McpResponse = z
+  .object({ jsonrpc: z.literal("2.0"), id: z.union([z.string(), z.number(), z.null()]) })
+  .catchall(z.unknown())
+  .meta({ id: "McpResponse", description: "A JSON-RPC 2.0 result or error envelope." })

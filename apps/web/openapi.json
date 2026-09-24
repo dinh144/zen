@@ -125,7 +125,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CardCreated"
+                  "$ref": "#/components/schemas/CardResponse"
                 }
               }
             }
@@ -541,15 +541,11 @@
         },
         "responses": {
           "200": {
-            "description": "An answer, or a task the UI carries out.",
+            "description": "An answer, a grilled question, a running task's result, or none.",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "propertyNames": {
-                    "type": "string"
-                  },
-                  "additionalProperties": {}
+                  "$ref": "#/components/schemas/AskReply"
                 }
               }
             }
@@ -650,7 +646,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Undo"
+                  "$ref": "#/components/schemas/Ok"
                 }
               }
             }
@@ -955,14 +951,8 @@
     "/file/{name}": {
       "get": {
         "summary": "A stored upload's bytes (redirects to storage in the cloud)",
-        "security": [
-          {
-            "cookieAuth": []
-          },
-          {
-            "bearerAuth": []
-          }
-        ],
+        "security": [],
+        "description": "No auth: the file name is an unguessable capability (a random id), the same model a signed URL uses. Anyone holding the name can read the file, and no one can guess a name they were not given.",
         "parameters": [
           {
             "in": "path",
@@ -979,6 +969,40 @@
           },
           "404": {
             "description": "Not found."
+          }
+        }
+      }
+    },
+    "/mcp": {
+      "post": {
+        "summary": "Model Context Protocol server (JSON-RPC 2.0) — zen as memory for other AI assistants",
+        "security": [
+          {
+            "cookieAuth": []
+          },
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/McpRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "A JSON-RPC 2.0 result or error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/McpResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -1324,6 +1348,31 @@
           "file"
         ]
       },
+      "McpRequest": {
+        "type": "object",
+        "properties": {
+          "jsonrpc": {
+            "type": "string",
+            "const": "2.0"
+          },
+          "id": {
+            "type": [
+              "string",
+              "number",
+              "null"
+            ]
+          },
+          "method": {
+            "type": "string"
+          },
+          "params": {}
+        },
+        "required": [
+          "jsonrpc",
+          "method"
+        ],
+        "description": "method: initialize | ping | tools/list | tools/call. For tools/call, params = {name, arguments}; arguments per tool: search_memory -> McpSearchArgs, get_card -> McpGetCardArgs, save_card -> McpSaveCardArgs, ask_zen -> McpAskArgs."
+      },
       "Ok": {
         "type": "object",
         "properties": {
@@ -1506,7 +1555,7 @@
         "additionalProperties": false,
         "description": "A saved card: a note, link, image or other kind of memory."
       },
-      "CardCreated": {
+      "CardResponse": {
         "type": "object",
         "properties": {
           "card": {
@@ -1548,18 +1597,6 @@
           "related",
           "links",
           "resurface"
-        ],
-        "additionalProperties": false
-      },
-      "CardResponse": {
-        "type": "object",
-        "properties": {
-          "card": {
-            "$ref": "#/components/schemas/Card"
-          }
-        },
-        "required": [
-          "card"
         ],
         "additionalProperties": false
       },
@@ -1707,18 +1744,330 @@
           }
         ]
       },
-      "Undo": {
-        "type": "object",
-        "properties": {
-          "ok": {
-            "type": "boolean",
-            "const": true
+      "AskReply": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "answer"
+              },
+              "text": {
+                "type": "string"
+              },
+              "cards": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "edges": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "source": {
+                      "type": "string"
+                    },
+                    "predicate": {
+                      "type": "string"
+                    },
+                    "target": {
+                      "type": "string"
+                    },
+                    "card_id": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "source",
+                    "predicate",
+                    "target",
+                    "card_id"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "findings": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "title": {
+                      "type": "string"
+                    },
+                    "url": {
+                      "type": "string"
+                    },
+                    "why": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "title",
+                    "url",
+                    "why"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "done": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": [
+              "kind",
+              "text",
+              "cards",
+              "edges"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "grill"
+              },
+              "text": {
+                "type": "string"
+              },
+              "questions": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "question": {
+                      "type": "string"
+                    },
+                    "options": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "label": {
+                            "type": "string"
+                          },
+                          "detail": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "label",
+                          "detail"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "question",
+                    "options"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "kind",
+              "text",
+              "questions"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "none"
+              },
+              "text": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "text"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "task"
+              },
+              "text": {
+                "type": "string"
+              },
+              "task": {
+                "type": "string",
+                "const": "organize"
+              },
+              "topic": {
+                "type": "string"
+              },
+              "done": {
+                "type": "object",
+                "properties": {
+                  "machine": {
+                    "type": "number"
+                  },
+                  "pinned": {
+                    "type": "number"
+                  },
+                  "loose": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "machine",
+                  "pinned",
+                  "loose"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "kind",
+              "text",
+              "task",
+              "topic",
+              "done"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "task"
+              },
+              "text": {
+                "type": "string"
+              },
+              "task": {
+                "type": "string",
+                "const": "web"
+              },
+              "topic": {
+                "type": "string"
+              },
+              "findings": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "title": {
+                      "type": "string"
+                    },
+                    "url": {
+                      "type": "string"
+                    },
+                    "why": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "title",
+                    "url",
+                    "why"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "kind",
+              "text",
+              "task",
+              "topic",
+              "findings"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "task"
+              },
+              "text": {
+                "type": "string"
+              },
+              "task": {
+                "type": "string",
+                "const": "lint"
+              },
+              "topic": {
+                "type": "string"
+              },
+              "lint": {
+                "type": "object",
+                "properties": {
+                  "duplicates": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "keep": {
+                          "type": "string"
+                        },
+                        "drop": {
+                          "type": "string"
+                        },
+                        "similarity": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "keep",
+                        "drop",
+                        "similarity"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "orphans": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "required": [
+                  "duplicates",
+                  "orphans"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "kind",
+              "text",
+              "task",
+              "topic",
+              "lint"
+            ],
+            "additionalProperties": false
           }
-        },
-        "required": [
-          "ok"
-        ],
-        "additionalProperties": false
+        ]
       },
       "ReenrichResponse": {
         "type": "object",
@@ -1814,6 +2163,80 @@
         "required": [
           "name",
           "url"
+        ],
+        "additionalProperties": false
+      },
+      "McpResponse": {
+        "type": "object",
+        "properties": {
+          "jsonrpc": {
+            "type": "string",
+            "const": "2.0"
+          },
+          "id": {
+            "type": [
+              "string",
+              "number",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "jsonrpc",
+          "id"
+        ],
+        "additionalProperties": {},
+        "description": "A JSON-RPC 2.0 result or error envelope."
+      },
+      "McpSearchArgs": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "additionalProperties": false
+      },
+      "McpGetCardArgs": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      },
+      "McpSaveCardArgs": {
+        "type": "object",
+        "properties": {
+          "note": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "description": "note or url is required (checked at runtime, not expressible in this shape)."
+      },
+      "McpAskArgs": {
+        "type": "object",
+        "properties": {
+          "question": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "question"
         ],
         "additionalProperties": false
       }
