@@ -28,19 +28,27 @@ read it before touching UI. `README.md` has the run and deploy steps.
   components. Text colour tokens must clear AA (inks go through `INK_TEXT`).
 - Motion collapses under `prefers-reduced-motion`; text fields show focus by inking their line
   (`data-ruled`), not a box.
+- The zen API is the only write path for every client (web, extension, Android, iOS). Every route
+  declares its request and response shapes once in `lib/schemas.ts` (zod) and validates input with
+  them; `bun run openapi` regenerates the committed `apps/web/openapi.json` from those declarations.
+  **API changes are additive only**: new endpoints and new optional fields are fine; removing or
+  renaming a field, changing a type, or making an optional field required is a breaking change and
+  CI refuses it (`oasdiff breaking` against main's committed document).
 
 ## Checks
 
 ```bash
 bun run typecheck && bun run lint          # repo root
 cd apps/web && bun run test                # unit (bun test lib)
+bun run openapi                            # regenerate apps/web/openapi.json after a schema change
 bun run e2e                                # local mode through the UI (dev server on :3000)
 bun run a11y <card-id> <space-id> <token>  # 14 routes × desk/phone × light/dark, axe AA
 bun run e2e:cloud                          # cloud mode: npx supabase start + a cloud build on :3002
 ```
 
-CI (`.github/workflows/ci.yml`) runs typecheck, lint, unit tests and build. There is no pre-commit hook
-on purpose: git's `core.hooksPath` points at the machine-wide graphify hooks.
+CI (`.github/workflows/ci.yml`) runs typecheck, lint, unit tests, build, the OpenAPI staleness check and
+`oasdiff breaking` against main. There is no pre-commit hook on purpose: git's `core.hooksPath` points at
+the machine-wide graphify hooks.
 
 ## Agent skills
 

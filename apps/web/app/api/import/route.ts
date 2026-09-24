@@ -1,9 +1,10 @@
 import { addToSpace, createCard, createSpace, linkCards, spend } from "@/lib/cards"
 import type { Card } from "@/lib/types"
 import { queueCards } from "@/lib/jobs"
-import { json } from "@/lib/http"
+import { json, parse } from "@/lib/http"
 import { fromCsv, fromHtml, type Incoming } from "@/lib/import"
 import { withUser } from "@/lib/user"
+import { ImportInput } from "@/lib/schemas"
 
 type Export = {
   cards?: Incoming[]
@@ -18,8 +19,9 @@ export const POST = withUser(async (me, request: Request) => {
   const start = text.trimStart()[0]
   let data: Export
   if (start === "{" || start === "[") {
-    const parsed = JSON.parse(text)
-    data = Array.isArray(parsed) ? { cards: parsed } : parsed
+    const raw = JSON.parse(text)
+    if (!parse(ImportInput, Array.isArray(raw) ? { cards: raw } : raw)) return json({ error: "invalid import" }, 400)
+    data = Array.isArray(raw) ? { cards: raw } : raw
   } else {
     data = { cards: /<a\s/i.test(text) ? fromHtml(text) : fromCsv(text) }
   }
