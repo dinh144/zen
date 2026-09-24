@@ -27,7 +27,8 @@ semantic search stay empty until you run `POST /api/reenrich`.
 The same code runs many minds on Supabase + Gemini + Vercel when the cloud variables in
 `.env.example` are set. Each step below needs an account; nothing here runs without them.
 
-1. Supabase project → run `db/*.sql` in order against its database (SQL editor or `psql`).
+1. Supabase project → `npx supabase link` then `npx supabase db push` (or run `supabase/migrations/*.sql`
+   in order via the SQL editor). Never `supabase db reset` against it — that wipes the database.
 2. Storage → create private buckets `uploads` (50 MB limit) and `backups`.
 3. Auth → URL configuration: site URL = the Vercel URL, redirect URL = `<site>/auth/callback`.
    Providers → Google (OAuth client from Google Cloud) and Email. Set a custom SMTP sender:
@@ -38,8 +39,8 @@ The same code runs many minds on Supabase + Gemini + Vercel when the cloud varia
 6. GitHub → repository secrets `DATABASE_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SECRET_KEY`
    for the nightly `backup` workflow (keeps 7 dumps in the `backups` bucket).
 
-Restore a backup: run `db/*.sql` on the new database, then `gunzip -c zen-*.sql.gz | psql "$DATABASE_URL"`.
-Test the cloud mode locally with `npx supabase start` (config in `supabase/`).
+Restore a backup: `npx supabase db push` on the new database, then `gunzip -c zen-*.sql.gz | psql "$DATABASE_URL"`.
+Test the cloud mode locally with `npx supabase start` (config and migrations in `supabase/`).
 
 ## What it does
 
@@ -66,8 +67,8 @@ Set the endpoint in the popup if the app is not on `localhost:3000`.
 ## Layout
 
 ```
-apps/web          Next.js 16 app, API routes, UI
-packages/ui       shadcn components (base-nova)
-db/001–006.sql    cards, spaces, achievements
-extension/        MV3 browser extension
+apps/web              Next.js 16 app, API routes, UI
+packages/ui           shadcn components (base-nova)
+supabase/migrations   schema, as Supabase CLI migrations (db/*.sql: frozen pre-CLI snapshot, Docker only)
+extension/            MV3 browser extension
 ```

@@ -22,8 +22,12 @@ read it before touching UI. `README.md` has the run and deploy steps.
 - Pasted URLs are fetched with `safeFetch` (SSRF guard in the cloud). Saved article HTML goes through
   `sanitizeArticle`. Uploaded files are served from storage's origin or sandboxed.
 - New cards call `spend(me)` (daily cap) before `createCard`.
-- Schema changes: add the next `db/00N_*.sql`, idempotent (`IF NOT EXISTS`), and run it against both
-  the Docker DB and the local Supabase DB. `db/*.sql` must stay runnable in glob order on an empty DB.
+- Schema changes: `npx supabase migration new <slug>` adds a file under `supabase/migrations/`,
+  idempotent where practical (`IF NOT EXISTS`). Apply locally with `npx supabase db reset` — this
+  wipes the local Supabase stack's data and must never be run against staging; ship to staging with
+  `npx supabase db push --linked`. `db/*.sql` is now a frozen pre-CLI snapshot kept only for the
+  Docker local-mode bootstrap (`README.md`); new changes go only in `supabase/migrations/`.
+  `scripts/check-rls.sh` must stay green: no table with row-level security disabled or a public policy.
 - UI strings are `[vi, en]` pairs in `lib/i18n.ts`, never literals; use `useT()` or `<Pair>` from server
   components. Text colour tokens must clear AA (inks go through `INK_TEXT`).
 - Motion collapses under `prefers-reduced-motion`; text fields show focus by inking their line
@@ -44,6 +48,7 @@ bun run openapi                            # regenerate apps/web/openapi.json af
 bun run e2e                                # local mode through the UI (dev server on :3000)
 bun run a11y <card-id> <space-id> <token>  # 14 routes × desk/phone × light/dark, axe AA
 bun run e2e:cloud                          # cloud mode: npx supabase start + a cloud build on :3002
+DATABASE_URL=... scripts/check-rls.sh      # fails if a table lacks RLS or has a public policy
 ```
 
 CI (`.github/workflows/ci.yml`) runs typecheck, lint, unit tests, build, the OpenAPI staleness check and
