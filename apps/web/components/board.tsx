@@ -224,11 +224,13 @@ export function Board({
     [feel, t],
   )
 
-  // Enrichment gives up after 180s, so 50 tries 4s apart always outlast it.
-  // ponytail: plain function, not useCallback — it recurses through its own name,
-  // which a memoized self-reference can't do without a ref indirection; upgrade
-  // if `save`/`upload` (which list it as a dep) need to stop re-creating each render.
-  async function refresh(id: string, tries = 50) {
+  // Enrichment gives up after 180s, so 50 tries 4s apart always outlast it. A named function
+  // expression, so it can call itself by name without closing over the outer `refresh` binding —
+  // that keeps this a genuinely stable useCallback (identity only changes with `feel`), which
+  // save/upload need: they list it as a dep, and the window-listener effect below lists them.
+  // Declared here, above save/upload: a `const` (unlike a function declaration) isn't hoisted,
+  // and TypeScript hard-errors (TS2448/2454) on a forward reference to it from their closures.
+  const refresh = React.useCallback(async function refresh(id: string, tries = 50) {
     const res = await fetch(`/api/cards/${id}`)
     if (!res.ok) return
     const { card } = await res.json()
@@ -240,7 +242,7 @@ export function Board({
       setBlooming(id)
       setTimeout(() => setBlooming(null), 1200)
     }
-  }
+  }, [feel])
 
   const save = React.useCallback(
     async (body: Record<string, unknown>) => {
