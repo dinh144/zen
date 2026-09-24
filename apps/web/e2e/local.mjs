@@ -15,7 +15,8 @@ p.on("console", (m) => m.type() === "error" && errors.push(m.text()))
 // 1. Composer: write a note, it lands, tags follow without a reload.
 await p.goto(B + "/", { waitUntil: "load" })
 await p.waitForTimeout(2000)
-const stamp = `e2e ${Date.now()}`
+const ts = Date.now()
+const stamp = `e2e ${ts}`
 await p.locator("form textarea").first().fill(`${stamp} bánh mì chảo sáng chủ nhật ở Đà Nẵng`)
 await p.locator("form button[type=submit]").first().click()
 const tile = p.locator("main figure", { hasText: stamp }).first()
@@ -72,7 +73,7 @@ ok("space deleted", (await p.locator(`text=${spaceName}`).count()) === 0, href ?
 // 4. Upload an image through the rail.
 await p.goto(B + "/", { waitUntil: "load" })
 await p.waitForTimeout(1500)
-const png = new URL("./e2e.png", import.meta.url).pathname
+const png = new URL(`./e2e-${ts}.png`, import.meta.url).pathname
 fs.copyFileSync(new URL("../../../extension/icon.png", import.meta.url), png)
 await p.locator("input[type=file]").first().setInputFiles(png)
 await p.locator("figure img").first().waitFor({ timeout: 15000 })
@@ -90,9 +91,9 @@ ok("focus mode saved", found.cards.some((c) => (c.note ?? "").includes("focus li
 const en = await (await fetch(`${B}/api/cards?q=${encodeURIComponent("breakfast sandwich")}`)).json()
 ok("english search finds vietnamese note", en.cards.some((c) => (c.note ?? "").includes(stamp)), `(${en.cards.length} hits)`)
 
-// 7. Let everything go again.
+// 7. Let everything go again — only what this run stamped, never anything already on the board.
 const mine = (await (await fetch(`${B}/api/cards?q=${encodeURIComponent(stamp)}`)).json()).cards.filter((c) => (c.note ?? "").includes(stamp))
-const uploaded = (await (await fetch(`${B}/api/cards?limit=5`)).json()).cards.filter((c) => c.title === "e2e.png")
+const uploaded = (await (await fetch(`${B}/api/cards?limit=20`)).json()).cards.filter((c) => c.title === `e2e-${ts}.png`)
 for (const c of [...mine, ...uploaded]) await fetch(`${B}/api/cards/${c.id}`, { method: "DELETE" })
 ok("cleanup", true, `${mine.length + uploaded.length} cards`)
 ok("no page errors", errors.length === 0, errors.slice(0, 3).join(" | "))

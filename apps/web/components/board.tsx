@@ -210,16 +210,39 @@ export function Board({
       if (query.trim()) feel(cards.length ? "surprised" : "confused", cards.length ? 1200 : 2600)
     }, 180)
     return () => clearTimeout(id)
-  }, [query, readOnly])
+  }, [query, readOnly, feel])
 
   // A save the server turned down: say so, and let the drop show it.
   const [notice, setNotice] = React.useState("")
-  function refused(status: number) {
-    setBusy(false)
-    feel("sad", 2600)
-    setNotice(t("board", status === 429 ? "limit" : "failed"))
-    setTimeout(() => setNotice(""), 5000)
-  }
+  const refused = React.useCallback(
+    (status: number) => {
+      setBusy(false)
+      feel("sad", 2600)
+      setNotice(t("board", status === 429 ? "limit" : "failed"))
+      setTimeout(() => setNotice(""), 5000)
+    },
+    [feel, t],
+  )
+
+  // Enrichment gives up after 180s, so 50 tries 4s apart always outlast it. A named function
+  // expression, so it can call itself by name without closing over the outer `refresh` binding —
+  // that keeps this a genuinely stable useCallback (identity only changes with `feel`), which
+  // save/upload need: they list it as a dep, and the window-listener effect below lists them.
+  // Declared here, above save/upload: a `const` (unlike a function declaration) isn't hoisted,
+  // and TypeScript hard-errors (TS2448/2454) on a forward reference to it from their closures.
+  const refresh = React.useCallback(async function refresh(id: string, tries = 50) {
+    const res = await fetch(`/api/cards/${id}`)
+    if (!res.ok) return
+    const { card } = await res.json()
+    setCards((current) => current.map((item) => (item.id === id ? card : item)))
+    if (!card.enriched_at && tries > 1) return void setTimeout(() => refresh(id, tries - 1), 4000)
+    if (card.enriched_at) {
+      feel("happy", 1800)
+      // The card blooms once when its tags land.
+      setBlooming(id)
+      setTimeout(() => setBlooming(null), 1200)
+    }
+  }, [feel])
 
   const save = React.useCallback(
     async (body: Record<string, unknown>) => {
@@ -237,7 +260,7 @@ export function Board({
       // The tags land later (a CPU model takes up to minutes); pull the row in until they do.
       setTimeout(() => refresh(card.id), 4000)
     },
-    [],
+    [feel, refresh, refused],
   )
 
   const upload = React.useCallback(async (file: File) => {
@@ -251,22 +274,7 @@ export function Board({
     setBusy(false)
     feel("excited", 1800)
     setTimeout(() => refresh(card.id), 4000)
-  }, [])
-
-  // Enrichment gives up after 180s, so 50 tries 4s apart always outlast it.
-  async function refresh(id: string, tries = 50) {
-    const res = await fetch(`/api/cards/${id}`)
-    if (!res.ok) return
-    const { card } = await res.json()
-    setCards((current) => current.map((item) => (item.id === id ? card : item)))
-    if (!card.enriched_at && tries > 1) return void setTimeout(() => refresh(id, tries - 1), 4000)
-    if (card.enriched_at) {
-      feel("happy", 1800)
-      // The card blooms once when its tags land.
-      setBlooming(id)
-      setTimeout(() => setBlooming(null), 1200)
-    }
-  }
+  }, [feel, refresh, refused])
 
   // The tile menu: the same actions the card's own page has, one right-click away.
   async function pin(card: Card) {
