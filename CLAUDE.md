@@ -41,3 +41,17 @@ bun run e2e:cloud                          # cloud mode: npx supabase start + a 
 
 CI (`.github/workflows/ci.yml`) runs typecheck, lint, unit tests and build. There is no pre-commit hook
 on purpose: git's `core.hooksPath` points at the machine-wide graphify hooks.
+
+## Agent skills
+
+### Issue tracker
+
+Issues and specs live as local markdown under `.scratch/` (gitignored: the repo is public). See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The five default roles, recorded as a `Status:` line in each issue file. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: one `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.

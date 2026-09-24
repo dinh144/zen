@@ -53,3 +53,5 @@ data/
 # personal planning notes and the local code graph stay off the public repo
 /brainstorms
 graphify-out/
+
+/.scratch
