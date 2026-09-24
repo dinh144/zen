@@ -8,9 +8,21 @@ jobs:
       DATABASE_URL: postgres://zen:zen@localhost:5434/zen
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # need origin/main's openapi.json below, not just the tip commit
       - uses: oven-sh/setup-bun@v2
       - run: bun install --frozen-lockfile
       - run: bun run typecheck
       - run: bun run lint
       - run: cd apps/web && bun run test
       - run: bun run build
+      - run: cd apps/web && bun run openapi && git diff --exit-code openapi.json
+      - run: curl -fsSL https://raw.githubusercontent.com/oasdiff/oasdiff/main/install.sh | INSTALL_DIR="$HOME/.local/bin" sh && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - run: |
+          cd apps/web
+          if git cat-file -e origin/main:apps/web/openapi.json 2>/dev/null; then
+            git show origin/main:apps/web/openapi.json > /tmp/base-openapi.json
+            oasdiff breaking /tmp/base-openapi.json openapi.json --fail-on ERR
+          else
+            echo "main has no committed openapi.json yet — nothing to diff"
+          fi
