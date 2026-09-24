@@ -1,5 +1,6 @@
 import { chromium } from "playwright"
 import fs from "node:fs"
+import { fetchConfirmationLink } from "./mailpit.mjs"
 
 // Cloud mode against `npx supabase start`: magic-link sign-in via Mailpit, isolation between
 // three users, direct uploads, signed URLs, sharing, daily limit (build with ZEN_DAILY_CARDS=20),
@@ -19,15 +20,7 @@ async function signIn(email) {
   await page.locator("input[type=email]").fill(email)
   await page.getByRole("button", { name: /gửi đường dẫn|send me a link/i }).click()
   await page.getByRole("status").waitFor({ timeout: 10000 })
-  let link = null
-  for (let i = 0; i < 20 && !link; i++) {
-    await page.waitForTimeout(500)
-    const list = await (await fetch(`${MAIL}/search?query=${encodeURIComponent("to:" + email)}`)).json()
-    const id = list.messages?.[0]?.ID
-    if (!id) continue
-    const msg = await (await fetch(`${MAIL}/message/${id}`)).json()
-    link = /href="([^"]+)"/.exec(msg.HTML ?? "")?.[1]?.replace(/&amp;/g, "&") ?? null
-  }
+  const link = await fetchConfirmationLink(MAIL, email)
   await page.goto(link)
   await page.waitForURL(`${B}/`, { timeout: 15000 })
   return { ctx, page }

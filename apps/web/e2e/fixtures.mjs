@@ -4,14 +4,17 @@ import http from "node:http"
 // extension's entry points (not zen's own UI) are what the harness exercises.
 const PNG_1X1 = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=", "base64")
 
-const PAGES = {
-  "/": `<!doctype html><html><body>
+// A Map, not a plain object: a plain object's bracket lookup walks the prototype chain, so a
+// request for a path like "/constructor" could resolve to Object.prototype.constructor instead
+// of undefined and crash the server trying to serve it as a response body.
+const PAGES = new Map([
+  ["/", `<!doctype html><html><body>
     <p id="quote">the quiet drop keeps what the mind finds</p>
     <a id="link" href="/other">a linked page</a>
     <img id="pic" src="/pic.png" width="1" height="1" />
-  </body></html>`,
-  "/other": `<!doctype html><html><body><p>the other fixture page</p></body></html>`,
-}
+  </body></html>`],
+  ["/other", `<!doctype html><html><body><p>the other fixture page</p></body></html>`],
+])
 
 /** Serves the fixture pages on a free local port. Call `close()` when the harness is done. */
 export function serveFixtures() {
@@ -20,7 +23,7 @@ export function serveFixtures() {
       res.writeHead(200, { "content-type": "image/png" })
       return res.end(PNG_1X1)
     }
-    const body = PAGES[req.url]
+    const body = PAGES.get(req.url)
     if (body) {
       res.writeHead(200, { "content-type": "text/html" })
       return res.end(body)
