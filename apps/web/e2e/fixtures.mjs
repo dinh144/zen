@@ -30,9 +30,13 @@ export function serveFixtures() {
   })
   // Bound to "localhost" (not 127.0.0.1): the extension's host_permissions match that hostname
   // literally, on any port, per Chrome's match-pattern rules.
-  return new Promise((resolve) =>
+  return new Promise((resolve, reject) => {
+    server.on("error", (e) => {
+      console.error("fixture server error:", e.message)
+      reject(e) // a no-op once the promise below has already resolved
+    })
     server.listen(0, "localhost", () =>
       resolve({ url: `http://localhost:${server.address().port}`, close: () => server.close() }),
-    ),
-  )
+    )
+  })
 }
