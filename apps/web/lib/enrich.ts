@@ -8,6 +8,8 @@ import { readPdf } from "./pdf"
 import { getFile } from "./storage"
 import { languageOf } from "./settings"
 import type { Kind } from "./types"
+import { JSDOM } from "jsdom"
+import { Readability } from "@mozilla/readability"
 
 
 const meta = (html: string, prop: string) => {
@@ -263,8 +265,6 @@ export async function enrichCard(id: string) {
 /** Readability gives the article body; we keep the HTML for Reading Mode. */
 function readArticle(html: string, url: string) {
   try {
-    const { JSDOM } = require("jsdom") as typeof import("jsdom")
-    const { Readability } = require("@mozilla/readability") as typeof import("@mozilla/readability")
     const dom = new JSDOM(html, { url })
     const parsed = new Readability(dom.window.document).parse()
     if (!parsed?.content || (parsed.textContent?.length ?? 0) < 1200) return null
