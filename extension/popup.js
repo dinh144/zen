@@ -21,10 +21,22 @@ function showView(view) {
   unreachable.style.display = view === "unreachable" ? "block" : "none"
 }
 
-// A 401 means the session ended: forget every local cache so no trace of one mind shows up for
-// another. Every call is tagged with a token so a slower, now-stale call (e.g. from the previous
-// endpoint) can never clobber a newer one's result.
+// Every check (and the 401 reaction below) is tagged with a rising token so a slower, now-stale
+// call can never clobber a newer one's result — not the view, and not the cache clear either.
 let checkToken = 0
+
+// The server has already answered 401 — forget the cache and show the sign-in prompt right away,
+// no second round trip to ask again what we were just told (used by checkSignedIn and the save
+// handler alike, so the rule lives in one place).
+async function showSignedOut() {
+  const token = ++checkToken
+  document.body.dataset.checkSeq = String(token)
+  await forgetSession()
+  if (token !== checkToken) return // a newer check started while the cache was clearing
+  signInLink.href = `${base()}/login`
+  showView("out")
+}
+
 async function checkSignedIn() {
   const token = ++checkToken
   document.body.dataset.checkSeq = String(token)
@@ -37,9 +49,16 @@ async function checkSignedIn() {
     if (token === checkToken) showView("unreachable")
     return
   }
-  if (res.status === 401) await chrome.storage.local.clear()
-  if (token === checkToken) showView(res.ok ? "in" : "out")
+  if (token !== checkToken) return // a newer check has already started; this result is stale
+  if (res.status === 401) return showSignedOut()
+  showView(res.ok ? "in" : "unreachable") // any other non-2xx (5xx, 429, …) is an error, not "sign in"
 }
+
+// An open popup reacts even to a cache clear it didn't cause itself — a right-click or
+// Ctrl+Shift+S save's 401 is handled entirely in the service worker, but the popup still updates.
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === "local") checkSignedIn()
+})
 
 chrome.storage.sync.get("endpoint").then(({ endpoint }) => {
   endpointField.value = endpoint || "http://localhost:3000"
@@ -68,9 +87,6 @@ saveButton.addEventListener("click", async () => {
     return
   }
   if (res.ok) return window.close()
-  if (res.status === 401) {
-    await chrome.storage.local.clear()
-    return checkSignedIn()
-  }
+  if (res.status === 401) return showSignedOut()
   saveButton.textContent = "could not save"
 })
