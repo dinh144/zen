@@ -66,3 +66,32 @@ async def test_unknown_signing_key_is_401(client: httpx.AsyncClient, keypair, mo
     token = _token(private_pem)
     r = await client.get("/api/cards", headers={"Authorization": f"Bearer {token}"})
     assert r.status_code == 401
+
+
+async def test_staging_allowlist_refuses_unlisted_email(
+    client: httpx.AsyncClient, keypair, stub_signing_key, monkeypatch
+):
+    monkeypatch.setattr(config, "ALLOWLIST", {"allowed@test.local"})
+    private_pem, _ = keypair
+    token = _token(private_pem, email="someone-else@test.local")
+    r = await client.get("/api/cards", headers={"Authorization": f"Bearer {token}"})
+    assert r.status_code == 403
+    assert r.json() == {"error": "not allowed"}
+
+
+async def test_staging_allowlist_accepts_listed_email(
+    client: httpx.AsyncClient, keypair, stub_signing_key, monkeypatch
+):
+    monkeypatch.setattr(config, "ALLOWLIST", {"allowed@test.local"})
+    private_pem, _ = keypair
+    token = _token(private_pem, email="allowed@test.local")
+    r = await client.get("/api/cards", headers={"Authorization": f"Bearer {token}"})
+    assert r.status_code == 200
+
+
+async def test_empty_allowlist_accepts_any_email(client: httpx.AsyncClient, keypair, stub_signing_key):
+    """The default (production and local dev): no ZEN_ALLOWLIST means every verified mind passes."""
+    private_pem, _ = keypair
+    token = _token(private_pem, email="anyone@test.local")
+    r = await client.get("/api/cards", headers={"Authorization": f"Bearer {token}"})
+    assert r.status_code == 200
