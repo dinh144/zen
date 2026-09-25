@@ -96,3 +96,8 @@ async def test_board_requires_a_token(client: httpx.AsyncClient):
     r = await client.get("/api/cards")
     assert r.status_code == 401
     assert r.json() == {"error": "locked"}
+
+
+async def test_board_rejects_an_invalid_limit(client: httpx.AsyncClient, mind_a: Mind):
+    r = await client.get("/api/cards", headers=mind_a.headers, params={"limit": 0})
+    assert r.status_code == 422
