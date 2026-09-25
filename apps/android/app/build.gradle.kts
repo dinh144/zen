@@ -19,6 +19,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true // BuildConfig.DEBUG gates the design sampler screen to debug builds
     }
 
     compileOptions {
@@ -46,5 +47,13 @@ dependencies {
     implementation(composeBom)
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.foundation:foundation")
+    implementation("androidx.compose.animation:animation")
     implementation("androidx.activity:activity-compose:1.13.0")
+    // Zen Old Mincho / Zen Kaku Gothic New / Noto (vi/ko/zh) through Android's Downloadable
+    // Fonts — the platform's own "fetch once, cache" mechanism, matching next/font/google on
+    // the web without committing font binaries to this repo. Not covered by the compose BOM;
+    // pinned to the latest stable release on Google's Maven as of this ticket.
+    implementation("androidx.compose.ui:ui-text-google-fonts:1.12.1")
+
+    testImplementation("junit:junit:4.13.2")
 }
