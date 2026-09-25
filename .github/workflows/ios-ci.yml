@@ -19,6 +19,7 @@ jobs:
           xcodebuild build \
             -project Zen.xcodeproj -scheme Zen \
             -sdk iphonesimulator -destination "platform=iOS Simulator,name=iPhone 17" \
+            -skipPackagePluginValidation \
             CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO
       - name: Install the app on a booted simulator
         run: |
