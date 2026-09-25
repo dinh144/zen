@@ -7,7 +7,8 @@
 - **Users**: two modes from one codebase. Local: one mind per install behind `ZEN_PASSWORD`.
   Cloud (Supabase configured): many minds, each signed in by Google or an email link; every
   query is scoped to its user. Every card is private unless a space is shared by link.
-- **Platform**: desktop web first, phone through PWA + share target, browser extension for capture.
+- **Platform**: desktop web first, phone through PWA + share target, native Android and iOS
+  apps (Kotlin/Compose and Swift/SwiftUI — see Mobile below), browser extension for capture.
 - **Accessibility**: WCAG 2.1 AA. Every card is a real button, dialogs trap focus,
   `prefers-reduced-motion` turns transitions off.
 - **Performance budget**: board paints in under 1s with 200 cards; capture returns before
@@ -17,9 +18,9 @@
   the copy never claims more privacy than the running mode gives (`…Cloud` strings).
 - **Landing**: `/` when signed out (and always at `/welcome`) — tagline, five sections, the
   sixteen moods, one call to action. Same paper, same drop, no marketing gloss.
-- **Known gaps**: CPU vision takes 30–120s per image locally · no native iOS/Android app
-  (PWA + share target instead) · enrichment queue is a loop, not a durable queue (restart during
-  `after()` loses that pass — `POST /api/reenrich` fixes it) · no visual regression baseline yet ·
+- **Known gaps**: CPU vision takes 30–120s per image locally · enrichment queue is a loop, not
+  a durable queue (restart during `after()` loses that pass — `POST /api/reenrich` fixes it) ·
+  no visual regression baseline yet ·
   cloud: video posters need ffmpeg, which Vercel lacks, so cloud videos show without a still ·
   the PWA share target posts through a function, so shared files above ~4.5 MB fail on Vercel ·
   the semantic-search cut is tuned for bge-m3 and must be retuned once Gemini embeddings run.
@@ -80,3 +81,35 @@ from the product we studied; the study lives in `docs/mymind-inventory.md`.
   in lower case; keep one accent.
 - **Don't**: giant italic display type, orange accents, five-column grids, rounded
   cards, shadows as decoration, exclamation marks, counters, streaks, tours.
+
+## Mobile
+
+Android and iOS build the sumi-e look natively — Kotlin/Compose, Swift/SwiftUI — with no
+shared UI code and no platform-default look (no Material, no iOS system chrome). This block is
+written once, by the Android lane, before either app's first UI ticket; the iOS lane follows it
+unchanged (zen-android spec, Implementation Decisions).
+
+- **Touch targets**: 48dp/pt minimum on every tappable element, even where the layout stays
+  sparse — the calm reads in the space around a target, not in its size.
+- **Gesture map**: a tap opens with the drop's ink-flow gesture; long-press (never hover, there
+  is none) reveals a card's caption and its actions; a pinch tightens the board into more
+  columns and the drop turns unimpressed; a lift-away drag lets a card go and the drop turns
+  scared; two fingers pan and zoom the canvas; predictive back previews the drop's reverse
+  gesture as a swipe and cancels cleanly if the finger lifts before the edge.
+- **Haptics map**: a soft tick when a card settles or its tags land, a firmer confirm when
+  something is set down, a double tick on tie, a reject buzz on letting go of a card and when
+  the AI is unreachable. Every haptic reads the system's own haptics setting first; none of
+  them override it.
+- **Motion per platform**: the same curve and durations as the web — `cubic-bezier(0.22, 1,
+  0.36, 1)`, 300–700ms — plus springs wherever a finger is dragging something directly. Both
+  apps request the display's full refresh rate. The native twin of
+  `prefers-reduced-motion` (Android's animator duration scale at 0 or "remove animations";
+  iOS's Reduce Motion) collapses every animation to an instant change; a drop job then shows
+  as an outline instead of animating in.
+- **Widget and notification styling**: widgets, tiles and notifications carry the same paper,
+  ink, hairlines and radius 2dp as the app — no platform-default card chrome, no colour outside
+  the twelve inks and the seal vermilion. Notification actions read lowercase and unhurried,
+  the same voice as everywhere else in zen.
+- **The watch**: ink on dark paper — night is the watch's only theme — with the drop as its
+  complication or tile icon, still wearing its sixteen moods. The watch never signs in and
+  never shows anything the phone has not handed it.
