@@ -16,9 +16,12 @@ jobs:
       - name: Build for the simulator
         run: |
           cd apps/ios
+          # No explicit -sdk: it would force every embedded target (including the watchOS
+          # complication extension) onto the iphonesimulator SDK. -destination alone lets each
+          # target build against its own platform.
           xcodebuild build \
             -project Zen.xcodeproj -scheme Zen \
-            -sdk iphonesimulator -destination "platform=iOS Simulator,name=iPhone 17" \
+            -destination "platform=iOS Simulator,name=iPhone 17" \
             -skipPackagePluginValidation \
             CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO
       - name: Install the app on a booted simulator
