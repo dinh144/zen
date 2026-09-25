@@ -11,6 +11,9 @@ struct SignInScreen: View {
                 .accessibilityIdentifier("signin.google")
                 .padding()
         }
+        // .contain keeps the Text's own "signin.google" identifier visible to XCUITest: without
+        // it, giving the ZStack its own identifier collapses the whole subtree into one element.
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("signin.screen")
     }
 }
