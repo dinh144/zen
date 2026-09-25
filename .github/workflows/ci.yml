@@ -11,7 +11,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
       - run: bun install --frozen-lockfile
-      - run: cd apps/web && bun run openapi && git diff --exit-code openapi.json
+      - run: cd apps/web && bun run openapi && git diff --exit-code openapi.json lib/api/schema.ts
       - run: git fetch --depth=1 origin main:refs/remotes/origin/main
       - uses: actions/cache@v4
         with:

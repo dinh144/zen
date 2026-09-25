@@ -25,4 +25,4 @@ export async function isAuthed() {
   return validSession((await cookies()).get(COOKIE)?.value)
 }
 
-export { COOKIE }
+export { COOKIE, token }

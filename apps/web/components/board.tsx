@@ -7,6 +7,7 @@ import type { Card, Space } from "@/lib/types"
 import { CLOUD } from "@/lib/cloud"
 import { CardTile, TileMenu } from "@/components/card-tile"
 import { notify } from "@/lib/notify"
+import { safely, takeKeptDraft } from "@/lib/api/browser"
 import { ToggleGroup, ToggleGroupItem } from "@workspace/ui/components/toggle-group"
 import { Slider } from "@workspace/ui/components/slider"
 import { Progress } from "@workspace/ui/components/progress"
@@ -116,6 +117,12 @@ export function Board({
   const dense = view === "dense"
   const [open, setOpen] = React.useState<Card | null>(null)
   const [draft, setDraft] = React.useState("")
+  const draftRef = React.useRef(draft)
+  React.useEffect(() => void (draftRef.current = draft), [draft])
+  // A dropped session sent the mind to sign in and kept what they were writing; it comes back once here.
+  React.useEffect(() => {
+    if (mode === "everything") setDraft((current) => current || takeKeptDraft())
+  }, [mode])
   const [top, setTop] = React.useState(pinned)
   const [leaving, setLeaving] = React.useState<string | null>(null)
   const [blooming, setBlooming] = React.useState<string | null>(null)
@@ -182,20 +189,25 @@ export function Board({
       const last = cards.at(-1)
       if (!entry?.isIntersecting || loading.current || !last) return
       loading.current = true
-      const res = await fetch(`/api/cards?limit=${PAGE}&after=${last.id}`)
-      if (!res.ok) {
-        // Signed out or the server stumbled: stop asking; the next visit starts over.
+      const page = await safely(
+        (api) => api.GET("/cards", { params: { query: { limit: PAGE, after: last.id } } }),
+        draftRef.current,
+        t("errors", "broke"),
+        () => router.push("/login"),
+      )
+      if (!page) {
+        // Signed out (already sent to sign in) or the API stumbled (a calm toast said so): stop asking.
         loading.current = false
         return setMore(false)
       }
-      const { cards: next } = (await res.json()) as { cards: Card[] }
+      const next = page.cards
       setCards((current) => [...current, ...next.filter((card) => !current.some((item) => item.id === card.id))])
       setMore(next.length >= PAGE)
       loading.current = false
     }, { rootMargin: "600px" })
     observer.observe(node)
     return () => observer.disconnect()
-  }, [cards, more, mode, query])
+  }, [cards, more, mode, query, t, router])
 
   // Search as you type, like mymind's single field.
   React.useEffect(() => {
