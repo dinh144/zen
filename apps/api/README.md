@@ -21,7 +21,24 @@ uv run pyright
 uv run pytest                        # HTTP-level, against a real Supabase stack (env above)
 uv run python scripts/gen_openapi.py     # regenerate the committed openapi.json after a route change
 uv run python scripts/check_contract.py  # staleness + oasdiff breaking against apps/web/openapi.json
+docker build .                           # the container CI builds and (eventually) deploys
 ```
 
 Tests only touch data they create themselves: never point `DATABASE_URL` at a stack holding real
 cards. `oasdiff-exceptions.md` lists the reviewed, intentional breaking changes.
+
+## Staging allowlist
+
+Set `ZEN_ALLOWLIST` (comma-separated emails) to refuse any verified mind not on the list — the
+API-side half of the staging story (`apps/web/lib/allowlist.ts` is the other half, gating the
+password sign-in route). Unset (production and local dev) accepts every verified mind.
+
+## Container / CI
+
+`Dockerfile` builds one image (Python 3.12 slim + ffmpeg; Pillow, pypdf and pypdfium2 are pip
+deps) and serves it with `uvicorn --log-config log_config.json`, so every log line is one JSON
+object (`severity`, `message`, never a card's contents) — the shape Cloud Run parses straight into
+Cloud Logging. `.github/workflows/api-ci.yml` runs ruff, pyright, pytest against an ephemeral
+Supabase stack, the contract check and the image build on every push and pull request. It does not
+deploy: that needs a Google Cloud project (billing, Cloud Run + Vertex AI enabled) and a workload
+identity for CI, none of which exists yet — see ticket 03's Comments.
