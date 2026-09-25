@@ -25,9 +25,13 @@ def _simplify_nullable(node: JSON) -> JSON:
     if isinstance(node, dict):
         any_of = node.get("anyOf")
         if isinstance(any_of, list) and {"type": "null"} in any_of and len(any_of) == 2:
-            other = next(s for s in any_of if s != {"type": "null"})
-            if set(other) == {"type"}:
-                node = {k: v for k, v in node.items() if k != "anyOf"} | {"type": [other["type"], "null"]}
+            other: dict[str, Any] = next(s for s in any_of if s != {"type": "null"})
+            # Keep any other keys the branch carries (an `enum`, say) — only `type` needs merging.
+            if isinstance(other.get("type"), str):
+                merged: dict[str, Any] = {k: v for k, v in node.items() if k != "anyOf"}
+                merged |= other
+                merged["type"] = [other["type"], "null"]
+                node = merged
         return {k: _simplify_nullable(v) for k, v in node.items()}
     if isinstance(node, list):
         return [_simplify_nullable(v) for v in node]
