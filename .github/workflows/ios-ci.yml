@@ -23,6 +23,7 @@ jobs:
             -project Zen.xcodeproj -scheme Zen \
             -destination "platform=iOS Simulator,name=iPhone 17" \
             -skipPackagePluginValidation \
+            -derivedDataPath DerivedData \
             CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO
       - name: Install the app on a booted simulator
         run: |
@@ -36,7 +37,10 @@ jobs:
                       print(d["udid"]); sys.exit(0)
           sys.exit(1)')
           xcrun simctl boot "$UDID" || true
-          APP_PATH=$(find apps/ios -name "Zen.app" -path "*iphonesimulator*" | head -1)
+          # -derivedDataPath above pins the build output under apps/ios/DerivedData — the
+          # default (~/Library/Developer/Xcode/DerivedData/<hash>) isn't reliably findable.
+          APP_PATH=$(find apps/ios/DerivedData/Build/Products -maxdepth 2 -name "Zen.app" | head -1)
+          test -n "$APP_PATH"
           xcrun simctl install "$UDID" "$APP_PATH"
           echo "SIMULATOR_UDID=$UDID" >> "$GITHUB_ENV"
       - uses: actions/setup-java@v4
