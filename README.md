@@ -19,6 +19,8 @@ Vietnamese by default, English one click away. A landing page lives at `/welcome
 5. `bun install && bun dev` — http://localhost:3000
 
 Set `ZEN_PASSWORD` in `.env.local` to lock the app behind one password.
+Set `NEXT_PUBLIC_API_URL` to point the web app at a separately-hosted zen API (empty means this
+app's own `/api`, same origin); switching or rolling back is that one variable.
 Without Ollama running, capture and keyword search still work; tags and
 semantic search stay empty until you run `POST /api/reenrich`.
 
