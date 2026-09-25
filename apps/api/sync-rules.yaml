@@ -4,7 +4,10 @@
 # not a screen), and any device-token/checkpoint table (neither exists yet).
 #
 # Conventions for a new synced table (see CLAUDE.md "Sync-friendly schema"):
-#   - scope it to the mind, directly by user_id or by joining to a table that has one;
+#   - a data query below reads exactly one table (PowerSync's sync rules cannot JOIN), so give
+#     the table its own user_id column even if it already carries one transitively (a trigger
+#     can stamp it from a parent row on insert, as card_spaces/card_links/card_entities/
+#     card_clusters do — see the migration that added them);
 #   - if it has no single-column primary key, alias a concatenation of its key columns as
 #     `id` in the data query below (PowerSync's own pattern for join tables) rather than
 #     adding a surrogate id column;
@@ -21,13 +24,11 @@ bucket_definitions:
       - SELECT id, name, share_token, query, parent_id, created_at, updated_at
         FROM spaces WHERE user_id = bucket.user_id
 
-      - SELECT cs.card_id || ':' || cs.space_id as id, cs.card_id, cs.space_id
-        FROM card_spaces cs JOIN cards c ON c.id = cs.card_id
-        WHERE c.user_id = bucket.user_id
+      - SELECT card_id || ':' || space_id as id, card_id, space_id
+        FROM card_spaces WHERE user_id = bucket.user_id
 
-      - SELECT cl.from_id || ':' || cl.to_id as id, cl.from_id, cl.to_id
-        FROM card_links cl JOIN cards c ON c.id = cl.from_id
-        WHERE c.user_id = bucket.user_id
+      - SELECT from_id || ':' || to_id as id, from_id, to_id
+        FROM card_links WHERE user_id = bucket.user_id
 
       - SELECT user_id || ':' || key as id, key, unlocked_at
         FROM achievements WHERE user_id = bucket.user_id
@@ -38,16 +39,14 @@ bucket_definitions:
       - SELECT id, source_id, target_id, predicate, card_id, created_at
         FROM relations WHERE user_id = bucket.user_id
 
-      - SELECT ce.card_id || ':' || ce.entity_id as id, ce.card_id, ce.entity_id
-        FROM card_entities ce JOIN cards c ON c.id = ce.card_id
-        WHERE c.user_id = bucket.user_id
+      - SELECT card_id || ':' || entity_id as id, card_id, entity_id
+        FROM card_entities WHERE user_id = bucket.user_id
 
       - SELECT id, name, space_id, summary, created_at
         FROM clusters WHERE user_id = bucket.user_id
 
-      - SELECT cc.card_id || ':' || cc.cluster_id as id, cc.card_id, cc.cluster_id
-        FROM card_clusters cc JOIN clusters cl ON cl.id = cc.cluster_id
-        WHERE cl.user_id = bucket.user_id
+      - SELECT card_id || ':' || cluster_id as id, card_id, cluster_id
+        FROM card_clusters WHERE user_id = bucket.user_id
 
       - SELECT id, action, summary, undo, created_at, updated_at, undone_at
         FROM agent_log WHERE user_id = bucket.user_id

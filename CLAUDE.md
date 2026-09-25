@@ -28,9 +28,14 @@ read it before touching UI. `README.md` has the run and deploy steps.
   `npx supabase db push --linked`. `db/*.sql` is now a frozen pre-CLI snapshot kept only for the
   Docker local-mode bootstrap (`README.md`); new changes go only in `supabase/migrations/`.
   `scripts/check-rls.sh` must stay green: no table with row-level security disabled or a public policy.
-- Sync-friendly schema (ticket 04, so PowerSync can replicate a table to a mind's phone): scope
-  a new table to the mind, directly with a `user_id` column or by joining to a table that has
-  one. If it has an `updated_at` that a partial-field `UPDATE` can touch, attach the existing
+- Sync-friendly schema (ticket 04, so PowerSync can replicate a table to a mind's phone): give a
+  new table its own `user_id` column — PowerSync's sync rules cannot `JOIN`, so a data query
+  must scope by a column on the one table it reads; if the mind is only reachable through a
+  parent row (a join table like `card_spaces`), add `user_id` anyway and a `BEFORE INSERT`
+  trigger that stamps it from the parent (see `zen_stamp_card_spaces_owner()` for the pattern),
+  and give the table an explicit column list on every `INSERT` so a later added column never
+  shifts a positional `VALUES` (`card_clusters`' inserts had to be fixed for exactly this).
+  If it has an `updated_at` that a partial-field `UPDATE` can touch, attach the existing
   `zen_touch_updated_at()` trigger (`CREATE TRIGGER touch_updated_at BEFORE UPDATE ON <table> FOR
   EACH ROW EXECUTE FUNCTION zen_touch_updated_at();`) so it stays current no matter which write
   path touches the row; skip it for insert/delete-only tables (nothing ever updates a field).

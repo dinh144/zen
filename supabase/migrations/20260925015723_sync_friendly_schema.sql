@@ -11,7 +11,9 @@
 --     concatenate the key columns in the sync rule's SELECT (e.g. `a || ':' || b as id`).
 --     card_spaces, card_links, card_entities, card_clusters and achievements use that in
 --     apps/api/sync-rules.yaml instead of gaining a surrogate id column here.
--- So the only real gap is "updated-at kept current on every write": grepping apps/web shows
+--   * a data query cannot JOIN (the next migration, sync_friendly_join_tables, covers what
+--     that means for card_spaces/card_links/card_entities/card_clusters).
+-- The other real gap is "updated-at kept current on every write": grepping apps/web shows
 -- several UPDATE statements on cards, and the only write paths on spaces, agent_log and
 -- agent_questions, that never touch updated_at. A trigger closes that for every write path,
 -- present and future (the Python API included), instead of trusting every call site to
