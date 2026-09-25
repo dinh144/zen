@@ -1,0 +1,50 @@
+# Design sampler: every base component and all sixteen moods render, in light and dark
+# (ticket zen-android/02). Preconditions: a debug build installed (the sampler is
+# BuildConfig.DEBUG-gated, so it never exists in a release build), no signed-in session.
+# Run: maestro test -e APP_ID=com.dinh144.zen flows/design-sampler.yaml
+appId: ${APP_ID}
+---
+- launchApp
+- assertVisible:
+    id: "signin.screen"
+- tapOn:
+    id: "signin.sampler"
+- assertVisible:
+    id: "sampler.screen"
+- assertVisible:
+    id: "sampler.button.light"
+- assertVisible:
+    id: "sampler.textfield.light"
+- assertVisible:
+    id: "sampler.sheet.light"
+- assertVisible:
+    id: "sampler.card.light"
+- assertVisible:
+    id: "sampler.mood.neutral.light"
+# Each target is scrolled to on its own (not assumed to follow from the previous scroll) —
+# at 200% font scale every section is much taller, so one scroll no longer reveals several
+# elements at once.
+- scrollUntilVisible:
+    element:
+      id: "sampler.button.dark"
+    direction: DOWN
+- assertVisible:
+    id: "sampler.button.dark"
+- scrollUntilVisible:
+    element:
+      id: "sampler.mood.neutral.dark"
+    direction: DOWN
+- assertVisible:
+    id: "sampler.mood.neutral.dark"
+- scrollUntilVisible:
+    element:
+      id: "sampler.glyphs.ko.dark"
+    direction: DOWN
+- assertVisible:
+    id: "sampler.glyphs.ko.dark"
+- scrollUntilVisible:
+    element:
+      id: "sampler.glyphs.zh.dark"
+    direction: DOWN
+- assertVisible:
+    id: "sampler.glyphs.zh.dark"
