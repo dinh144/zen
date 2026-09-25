@@ -1,0 +1,9 @@
+{
+  "dropOpenMenu": { "message": "打开 zen" },
+  "dropMenuMove": { "message": "移到另一个角落" },
+  "dropMenuHide": { "message": "在此页隐藏" },
+  "dropMenuMute": { "message": "将此网站静音" },
+  "popupMutedHeading": { "message": "已静音的网站" },
+  "popupMutedEmpty": { "message": "还没有静音的网站" },
+  "popupUnmute": { "message": "取消静音" }
+}

@@ -1,0 +1,9 @@
+{
+  "dropOpenMenu": { "message": "open zen" },
+  "dropMenuMove": { "message": "move to another corner" },
+  "dropMenuHide": { "message": "hide on this page" },
+  "dropMenuMute": { "message": "mute this site" },
+  "popupMutedHeading": { "message": "muted sites" },
+  "popupMutedEmpty": { "message": "no muted sites yet" },
+  "popupUnmute": { "message": "unmute" }
+}

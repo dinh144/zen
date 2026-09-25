@@ -9,3 +9,14 @@ async function forgetSession() {
   const all = await chrome.storage.local.get(null)
   if (Object.keys(all).length) await chrome.storage.local.clear()
 }
+
+// The site identity used for muting: just the lowercase hostname, kept in chrome.storage.sync
+// (a device preference, like the corner and the zen address — not per-mind cache, so it survives
+// a sign-out).
+function siteKey(url) {
+  try {
+    return new URL(url).hostname.toLowerCase()
+  } catch {
+    return null
+  }
+}

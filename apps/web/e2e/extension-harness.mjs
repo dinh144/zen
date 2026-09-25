@@ -3,6 +3,7 @@ import path from "node:path"
 import fs from "node:fs"
 import os from "node:os"
 import { fileURLToPath } from "node:url"
+import { execFileSync } from "node:child_process"
 import { serveFixtures } from "./fixtures.mjs"
 import { pollUntil } from "./poll.mjs"
 
@@ -10,7 +11,8 @@ import { pollUntil } from "./poll.mjs"
 // unpacked extension, talking to zen, driving the popup, and the checks that are identical once
 // a mind is signed in — only sign-in itself differs between the two modes.
 
-const EXT_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), "../../../extension")
+const ROOT_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), "../../..")
+const EXT_DIR = path.join(ROOT_DIR, "extension")
 
 // A deliberately unreachable address used to test the "switch zen address" cache-clearing and
 // unreachable-state paths. The port-1 attempt is a real request the browser makes (and this
@@ -86,6 +88,9 @@ export async function launchExtension(tag) {
  *  loaded and a fixture server running, guaranteeing both get torn down afterward even if `fn`
  *  throws. `tag` names the temp profile dir (kept separate per mode). */
 export async function withExtension(tag, fn) {
+  // The drop's sixteen moods are generated from apps/web/lib/drop.ts, so the loaded unpacked
+  // extension never runs against a stale copy.
+  execFileSync("bun", ["scripts/generate-drop-assets.ts"], { cwd: ROOT_DIR, stdio: "inherit" })
   const fixtures = await serveFixtures()
   try {
     const { close, ...harness } = await launchExtension(tag)
@@ -252,6 +257,106 @@ export async function runSignedInChecks({ ok, ctx, extId, swEvaluate, B, FX, sta
     }
     ok("cleanup", allDeleted, `${toDelete.length} cards, none outside this run's own`)
   }
+}
+
+/** The resting drop: entirely client-local (no zen call at all), so this runs once, not per mode
+ *  (extension.cloud.mjs doesn't repeat it — see its own comment). `host` is the drop's light-DOM
+ *  element ([data-zen-drop-host]); its own attributes (menu open/closed, corner) are readable
+ *  from outside even though its shadow content, being closed, is not — see bubble.js. */
+export async function runBubbleChecks({ ok, ctx, extId, swEvaluate, FX }) {
+  const host = (page) => page.locator("[data-zen-drop-host]")
+  const site = new URL(FX).hostname
+
+  // 1. Rests in the default corner, menu closed, no layout shift.
+  const p1 = await ctx.newPage()
+  await p1.goto(FX + "/")
+  await host(p1).waitFor({ state: "attached", timeout: 5000 })
+  ok("the drop rests once the page is idle", await host(p1).isVisible())
+  ok("resting drop's default corner", (await host(p1).getAttribute("data-zen-corner")) === "bottom-right")
+  ok("resting drop's menu starts closed", (await host(p1).getAttribute("data-zen-menu")) === "closed")
+  ok("no horizontal layout shift", (await p1.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)) === 0)
+
+  // 2. A real button whose label names its job, reachable by keyboard; Escape closes the menu and
+  //    returns focus to the drop.
+  await host(p1).click()
+  ok("the menu opens", (await host(p1).getAttribute("data-zen-menu")) === "open")
+  ok("focus moved into the drop", await p1.evaluate(() => document.activeElement === document.querySelector("[data-zen-drop-host]")))
+  await p1.keyboard.press("Escape")
+  ok("Escape closes the menu", (await host(p1).getAttribute("data-zen-menu")) === "closed")
+  ok("Escape returns focus to the drop", await p1.evaluate(() => document.activeElement === document.querySelector("[data-zen-drop-host]")))
+
+  // 3. Tab (and Shift+Tab) stay trapped inside the menu — never lands on the page beyond the drop.
+  await host(p1).click()
+  for (let i = 0; i < 5; i++) {
+    await p1.keyboard.press("Tab")
+    if (!(await p1.evaluate(() => document.activeElement === document.querySelector("[data-zen-drop-host]")))) {
+      ok("Tab stays trapped inside the open menu", false, `escaped after ${i + 1} presses`)
+      break
+    }
+  }
+  ok("Tab stays trapped inside the open menu (5 presses)", await p1.evaluate(() => document.activeElement === document.querySelector("[data-zen-drop-host]")))
+  await p1.keyboard.press("Escape")
+
+  // 4. Move to another corner (first menu item) — repositions at once and is remembered.
+  await host(p1).click()
+  await p1.keyboard.press("Enter")
+  ok("moved to another corner", (await host(p1).getAttribute("data-zen-corner")) === "bottom-left")
+  ok("the new corner is remembered", (await swEvaluate(() => chrome.storage.sync.get("corner"))).corner === "bottom-left")
+  await swEvaluate(() => chrome.storage.sync.remove("corner")) // back to the default for the rest of this run
+
+  // 5. Hide on this page (second menu item) — gone at once, but only for this page: a fresh load
+  //    of the very same address shows it again.
+  await host(p1).click()
+  await p1.keyboard.press("ArrowDown")
+  await p1.keyboard.press("Enter")
+  ok("hide on this page removes the drop at once", (await host(p1).count()) === 0)
+  await p1.close()
+  const p2 = await ctx.newPage()
+  await p2.goto(FX + "/")
+  ok("hiding a page never persists — a fresh load shows the drop again", await host(p2)
+    .waitFor({ state: "attached", timeout: 5000 })
+    .then(() => true, () => false))
+
+  // 6. Mute this site (third menu item) — gone at once, persists across a reload, listed in the
+  //    popup with an unmute action, and comes back once unmuted.
+  await host(p2).click()
+  await p2.keyboard.press("ArrowDown")
+  await p2.keyboard.press("ArrowDown")
+  await p2.keyboard.press("Enter")
+  ok("mute this site removes the drop at once", (await host(p2).count()) === 0)
+  ok("the muted site is remembered", ((await swEvaluate(() => chrome.storage.sync.get("mutedSites"))).mutedSites ?? []).includes(site))
+  await p2.close()
+  const p3 = await ctx.newPage()
+  await p3.goto(FX + "/")
+  await p3.waitForTimeout(500) // the content script gets one chance to build the drop, then never does
+  ok("a muted site never shows the drop, even after a reload", (await host(p3).count()) === 0)
+  await p3.close()
+
+  const popup = await openPopup(ctx, extId)
+  ok("the popup lists the muted site", await popup.locator("#mutedList").getByText(site).isVisible())
+  await popup.locator("#mutedList li", { hasText: site }).getByRole("button").click()
+  ok("the popup can unmute it", !((await swEvaluate(() => chrome.storage.sync.get("mutedSites"))).mutedSites ?? []).includes(site))
+  await popup.close()
+  const p4 = await ctx.newPage()
+  await p4.goto(FX + "/")
+  ok("unmuting a site brings the drop back", await host(p4)
+    .waitFor({ state: "attached", timeout: 5000 })
+    .then(() => true, () => false))
+  await p4.close()
+
+  // 7. Never on a page with a password field, and disappears at once if one is inserted later.
+  const p5 = await ctx.newPage()
+  await p5.goto(FX + "/password")
+  await p5.waitForTimeout(500)
+  ok("the drop never appears on a page with a password field", (await host(p5).count()) === 0)
+  await p5.close()
+
+  const p6 = await ctx.newPage()
+  await p6.goto(FX + "/late-password")
+  await host(p6).waitFor({ state: "attached", timeout: 5000 })
+  await host(p6).waitFor({ state: "detached", timeout: 5000 })
+  ok("a password field inserted later removes the drop at once", (await host(p6).count()) === 0)
+  await p6.close()
 }
 
 export function assertOnlyZenTraffic({ ok, seenHosts, B, allowed }) {

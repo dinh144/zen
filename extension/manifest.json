@@ -3,11 +3,19 @@
   "name": "zen — save to your mind",
   "version": "1.0.0",
   "description": "Save any page, image, or selection to zen.",
+  "default_locale": "en",
   "permissions": ["contextMenus", "activeTab", "storage", "notifications"],
   "icons": { "128": "icon.png" },
   "host_permissions": ["http://localhost/*", "https://*/*"],
   "background": { "service_worker": "background.js" },
   "action": { "default_popup": "popup.html" },
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["shared.js", "build/moods.generated.js", "drop-ui.js", "bubble.js"],
+      "run_at": "document_idle"
+    }
+  ],
   "commands": {
     "save-page": {
       "suggested_key": { "default": "Ctrl+Shift+S" },

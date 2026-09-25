@@ -16,6 +16,7 @@
     "e2e:staging": "node e2e/staging.mjs",
     "e2e:extension": "node e2e/extension.mjs",
     "e2e:extension:cloud": "node e2e/extension.cloud.mjs",
+    "e2e:extension:a11y": "node e2e/extension-a11y.mjs",
     "a11y": "node e2e/a11y.mjs",
     "openapi": "bun scripts/openapi.ts"
   },

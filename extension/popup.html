@@ -7,6 +7,11 @@
   a { color: #6F6A5F; font-size: 11px; }
   #signedOut, #signedIn, #unreachable { display: none; }
   #signedOut a { display: inline-block; margin-top: 4px; color: #1A1A18; }
+  #mutedSites { margin-top: 12px; border-top: 1px solid #DED7C8; padding-top: 8px; }
+  #mutedSites h2 { font: inherit; font-size: 11px; letter-spacing: 0.05em; color: #6F6A5F; margin: 0 0 6px; text-transform: lowercase; }
+  #mutedList { list-style: none; margin: 0; padding: 0; }
+  #mutedList li { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 4px 0; }
+  #mutedList button { margin: 0; width: auto; padding: 2px 8px; }
 </style>
 <div id="unreachable">
   <p>can't reach zen — check the address below</p>
@@ -20,5 +25,10 @@
   <button id="save">Save page to zen</button>
 </div>
 <p><input id="endpoint" placeholder="http://localhost:3000" /></p>
+<div id="mutedSites">
+  <h2 id="mutedHeading"></h2>
+  <p id="mutedEmpty"></p>
+  <ul id="mutedList"></ul>
+</div>
 <script src="shared.js"></script>
 <script src="popup.js"></script>
