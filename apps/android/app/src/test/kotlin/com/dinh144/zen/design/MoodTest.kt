@@ -22,9 +22,4 @@ class MoodTest {
         assertEquals(Mood.Sleepy, MOOD_FOR_STATE[ZenAppState.Drifting])
         assertEquals(Mood.Sleepy, MOOD_FOR_STATE[ZenAppState.CardSettling])
     }
-
-    @Test
-    fun `the mapping is deterministic — same state, same mood, every call`() {
-        ZenAppState.entries.forEach { state -> assertEquals(MOOD_FOR_STATE[state], MOOD_FOR_STATE[state]) }
-    }
 }
