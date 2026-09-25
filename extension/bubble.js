@@ -5,9 +5,24 @@
   if (chrome.extension.inIncognitoContext) return
   if (document.querySelector('input[type="password"]')) return
 
+  // Watched from here, before the awaits below open a gap a password field could appear in —
+  // `host` is still null at this point, so a hit here just blocks the drop from ever mounting
+  // (checked again below); once `host` exists, a hit here removes it at once.
+  let host = null
+  const observer = new MutationObserver(() => {
+    if (document.querySelector('input[type="password"]')) {
+      host?.remove()
+      observer.disconnect()
+    }
+  })
+  observer.observe(document.documentElement, { childList: true, subtree: true })
+
   const key = siteKey(location.href)
   const { mutedSites = [] } = await chrome.storage.sync.get("mutedSites")
-  if (key && mutedSites.includes(key)) return
+  if (key && mutedSites.includes(key)) {
+    observer.disconnect()
+    return
+  }
 
   let { corner = "bottom-right" } = await chrome.storage.sync.get("corner")
   const t = (msgKey) => chrome.i18n.getMessage(msgKey) || msgKey
@@ -21,7 +36,11 @@
     return `all: initial; position: fixed; z-index: 2147483647; display: block; ${v}: 16px; ${h}: 16px;`
   }
 
-  const host = document.createElement("div")
+  if (document.querySelector('input[type="password"]')) {
+    observer.disconnect()
+    return
+  }
+  host = document.createElement("div")
   host.dataset.zenDropHost = ""
   host.dataset.zenCorner = corner
   host.dataset.zenMenu = "closed"
@@ -57,12 +76,4 @@
       observer.disconnect()
     },
   })
-
-  const observer = new MutationObserver(() => {
-    if (document.querySelector('input[type="password"]')) {
-      host.remove()
-      observer.disconnect()
-    }
-  })
-  observer.observe(document.documentElement, { childList: true, subtree: true })
 })()
