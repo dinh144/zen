@@ -1,0 +1,32 @@
+name: api-ci
+on: [push, pull_request]
+env:
+  SUPABASE_URL: http://127.0.0.1:54321
+  DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+  OASDIFF_VERSION: 1.32.1
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v4
+      - run: cd apps/api && uv sync
+      - run: cd apps/api && uv run ruff check . && uv run ruff format --check .
+      - run: cd apps/api && uv run pyright
+      - run: npx --yes supabase@2 start
+      - run: cd apps/api && uv run pytest
+      - run: git fetch --depth=1 origin main:refs/remotes/origin/main
+      - uses: actions/cache@v4
+        with:
+          path: ~/.local/bin/oasdiff
+          key: oasdiff-${{ env.OASDIFF_VERSION }}
+      - run: |
+          mkdir -p "$HOME/.local/bin"
+          test -x "$HOME/.local/bin/oasdiff" || curl -fsSL https://raw.githubusercontent.com/oasdiff/oasdiff/main/install.sh | INSTALL_DIR="$HOME/.local/bin" version="$OASDIFF_VERSION" sh
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - run: cd apps/api && uv run python scripts/check_contract.py
+  image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build apps/api

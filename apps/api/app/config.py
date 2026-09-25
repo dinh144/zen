@@ -6,3 +6,7 @@ SUPABASE_URL = os.environ["SUPABASE_URL"].rstrip("/")
 
 # Direct connection to Postgres (the API runs as the table owner, bypassing RLS, like the TS server).
 DATABASE_URL = os.environ["DATABASE_URL"]
+
+# Comma-separated emails allowed to use the API. Empty (the default, including production) means
+# every verified mind is accepted; set only on staging (mirrors apps/web/lib/allowlist.ts).
+ALLOWLIST = {e.strip().lower() for e in os.environ.get("ZEN_ALLOWLIST", "").split(",") if e.strip()}

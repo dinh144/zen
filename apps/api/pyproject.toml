@@ -11,6 +11,9 @@ dependencies = [
   "pyjwt[crypto]>=2.9",
   "pyyaml>=6.0",
   "sqlglot>=27.0",
+  "pillow>=11.0",
+  "pypdf>=5.1",
+  "pypdfium2>=4.30",
 ]
 
 [dependency-groups]

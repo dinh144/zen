@@ -16,6 +16,10 @@ def _locked() -> HTTPException:
     return HTTPException(status_code=401, detail={"error": "locked"})
 
 
+def _not_allowed() -> HTTPException:
+    return HTTPException(status_code=403, detail={"error": "not allowed"})
+
+
 async def current_mind(credentials: HTTPAuthorizationCredentials | None = Depends(_bearer)) -> str:
     """The signed-in mind's id, verified against the project's published signing keys. A missing,
     expired, wrong-issuer or unknown-key token all get the same 401: the client's only correct
@@ -32,4 +36,8 @@ async def current_mind(credentials: HTTPAuthorizationCredentials | None = Depend
     sub = claims.get("sub")
     if not isinstance(sub, str):
         raise _locked()
+    if config.ALLOWLIST:
+        email = claims.get("email")
+        if not isinstance(email, str) or email.lower() not in config.ALLOWLIST:
+            raise _not_allowed()
     return sub

@@ -81,11 +81,13 @@ DATABASE_URL=... scripts/check-rls.sh      # fails if a table lacks RLS or has a
 cd apps/api && uv run ruff check . && uv run pyright && uv run pytest   # Python: lint + types + tests
 uv run uvicorn app.main:app --reload                   # run against a Supabase stack (see apps/api/README.md)
 uv run python scripts/check_contract.py                 # staleness + oasdiff breaking (apps/web/openapi.json)
+cd apps/api && docker build .                            # the container CI builds on every PR
 ```
 
 CI (`.github/workflows/ci.yml`) runs typecheck, lint, unit tests, build, the OpenAPI staleness check and
-`oasdiff breaking` against main. There is no pre-commit hook on purpose: git's `core.hooksPath` points at
-the machine-wide graphify hooks.
+`oasdiff breaking` against main. `.github/workflows/api-ci.yml` runs the Python checks above plus the
+container build on every push and pull request. There is no pre-commit hook on purpose: git's
+`core.hooksPath` points at the machine-wide graphify hooks.
 
 ## Agent skills
 
