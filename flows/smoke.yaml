@@ -8,3 +8,4 @@ appId: ${APP_ID}
     id: "signin.screen"
 - assertVisible:
     id: "signin.google"
+- takeScreenshot: signin

@@ -53,3 +53,10 @@ jobs:
         run: |
           export PATH="$PATH:$HOME/.maestro/bin"
           maestro --device "$SIMULATOR_UDID" test -e APP_ID=com.dinh144.zen flows/smoke.yaml
+      - name: Upload Maestro screenshots (for Dinh's visual review)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maestro-smoke-screenshots
+          path: ~/.maestro/tests
+          if-no-files-found: ignore
