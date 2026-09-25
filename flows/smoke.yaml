@@ -1,0 +1,10 @@
+# Smoke: the app launches and reaches the sign-in screen (ticket 01: zen-android/01).
+# Preconditions: a debug build installed, no signed-in session (fresh install or signed out).
+# Run: maestro test -e APP_ID=com.dinh144.zen flows/smoke.yaml
+appId: ${APP_ID}
+---
+- launchApp
+- assertVisible:
+    id: "signin.screen"
+- assertVisible:
+    id: "signin.google"
