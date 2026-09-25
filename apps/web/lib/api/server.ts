@@ -1,4 +1,3 @@
-import { headers } from "next/headers"
 import { token } from "@/lib/auth"
 import { cloud, supabaseServer } from "@/lib/supabase"
 import { API_URL, apiClient } from "./client"
@@ -12,15 +11,15 @@ async function meToken() {
 
 /** A relative baseUrl resolves against "the current page" in a browser; the server has no such
  *  thing, so with no separate API configured (this app still serving its own /api) it calls itself
- *  by the host it was reached on instead. */
-async function serverBaseUrl() {
-  if (API_URL) return API_URL
-  const list = await headers()
-  return `${list.get("x-forwarded-proto") ?? "http"}://${list.get("host")}`
+ *  on its own loopback port — never the incoming request's `host`/`x-forwarded-proto` headers,
+ *  which a non-browser client can set to any attacker-chosen value (SSRF). The Next process always
+ *  listens on plain HTTP on its own port, regardless of any TLS a proxy in front terminates. */
+function serverBaseUrl() {
+  return API_URL || `http://localhost:${process.env.PORT ?? 3000}`
 }
 
 /** A server component's own client, the mind's token forwarded as a bearer header. Null when signed out. */
 export async function apiForMe() {
   const mine = await meToken()
-  return mine ? apiClient(mine, await serverBaseUrl()) : null
+  return mine ? apiClient(mine, serverBaseUrl()) : null
 }
