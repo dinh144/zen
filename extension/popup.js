@@ -72,6 +72,38 @@ endpointField.addEventListener("change", async () => {
   checkSignedIn()
 })
 
+// Muted sites: a device preference in chrome.storage.sync, set by the drop's own menu (bubble.js).
+const mutedHeading = document.getElementById("mutedHeading")
+const mutedEmpty = document.getElementById("mutedEmpty")
+const mutedList = document.getElementById("mutedList")
+mutedHeading.textContent = chrome.i18n.getMessage("popupMutedHeading")
+mutedEmpty.textContent = chrome.i18n.getMessage("popupMutedEmpty")
+
+async function renderMutedSites() {
+  const { mutedSites = [] } = await chrome.storage.sync.get("mutedSites")
+  mutedEmpty.style.display = mutedSites.length ? "none" : "block"
+  mutedList.innerHTML = ""
+  for (const site of mutedSites) {
+    const li = document.createElement("li")
+    const label = document.createElement("span")
+    label.textContent = site
+    const unmute = document.createElement("button")
+    unmute.type = "button"
+    unmute.textContent = chrome.i18n.getMessage("popupUnmute")
+    unmute.addEventListener("click", async () => {
+      const { mutedSites: current = [] } = await chrome.storage.sync.get("mutedSites")
+      await chrome.storage.sync.set({ mutedSites: current.filter((s) => s !== site) })
+      renderMutedSites()
+    })
+    li.append(label, unmute)
+    mutedList.appendChild(li)
+  }
+}
+renderMutedSites()
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === "sync" && "mutedSites" in changes) renderMutedSites()
+})
+
 saveButton.addEventListener("click", async () => {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
   let res
