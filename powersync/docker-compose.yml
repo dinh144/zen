@@ -1,0 +1,66 @@
+# PowerSync Open Edition, self-hosted, standing in for PowerSync Cloud for local dev and staging
+# (ticket web-4: no cloud account needed). Replicates from the local Supabase stack's Postgres and
+# verifies Supabase Auth tokens against its Kong gateway; sync rules are apps/api/sync-rules.yaml
+# itself, mounted read-only so there is one file, never a copy that can drift.
+#
+# Usage: `cp .env.example .env` (edit if your Supabase stack isn't the default project_id "zen"),
+# then `docker compose up -d` from this directory. `docker compose down -v` tears it down, including
+# its own bucket-storage database (never the Supabase stack).
+services:
+  powersync:
+    image: journeyapps/powersync-service:latest
+    restart: unless-stopped
+    command: ["start", "-r", "unified"]
+    environment:
+      POWERSYNC_CONFIG_PATH: /config/service.yaml
+      PS_DATA_SOURCE_URI: ${PS_DATA_SOURCE_URI}
+      PS_STORAGE_SOURCE_URI: postgres://postgres:${PS_STORAGE_PASSWORD:-postgres}@ps-storage:5432/postgres
+      PS_JWKS_URL: ${PS_JWKS_URL}
+      PS_PORT: ${PS_PORT:-8090}
+      NODE_OPTIONS: --max-old-space-size=1000
+    volumes:
+      - ./service.yaml:/config/service.yaml:ro
+      - ../apps/api/sync-rules.yaml:/config/sync-config.yaml:ro
+    ports:
+      - "${PS_PORT:-8090}:${PS_PORT:-8090}"
+    depends_on:
+      ps-storage:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:${PS_PORT:-8090}/probes/liveness').then(r => r.ok ? process.exit(0) : process.exit(1)).catch(() => process.exit(1))",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks:
+      - default
+      - supabase
+
+  # PowerSync's own bucket-storage database (sync state), never the Supabase stack: keeps this
+  # service's data fully separate from a mind's real cards.
+  ps-storage:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: ${PS_STORAGE_PASSWORD:-postgres}
+    volumes:
+      - ps_storage_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+networks:
+  # Supabase CLI's own network for the target stack: `supabase_network_<project_id>`.
+  supabase:
+    name: ${SUPABASE_NETWORK:-supabase_network_zen}
+    external: true
+
+volumes:
+  ps_storage_data:
