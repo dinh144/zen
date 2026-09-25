@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Nightly backup: zen's data and its users (data only; the schema is db/*.sql), gzipped into the
-# private "backups" bucket, newest 7 kept. Restore: run db/*.sql on the new database, then gunzip | psql.
+# Nightly backup: zen's data and its users (data only; the schema is supabase/migrations/*.sql),
+# gzipped into the private "backups" bucket, newest 7 kept. Restore: supabase db push, then gunzip | psql.
 set -euo pipefail
 : "${DATABASE_URL:?}" "${NEXT_PUBLIC_SUPABASE_URL:?}" "${SUPABASE_SECRET_KEY:?}"
 KEEP=7
