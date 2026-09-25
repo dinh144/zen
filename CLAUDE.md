@@ -32,12 +32,22 @@ read it before touching UI. `README.md` has the run and deploy steps.
   components. Text colour tokens must clear AA (inks go through `INK_TEXT`).
 - Motion collapses under `prefers-reduced-motion`; text fields show focus by inking their line
   (`data-ruled`), not a box.
-- The zen API is the only write path for every client (web, extension, Android, iOS). Every route
-  declares its request and response shapes once in `lib/schemas.ts` (zod) and validates input with
-  them; `bun run openapi` regenerates the committed `apps/web/openapi.json` from those declarations.
-  **API changes are additive only**: new endpoints and new optional fields are fine; removing or
-  renaming a field, changing a type, or making an optional field required is a breaking change and
-  CI refuses it (`oasdiff breaking` against main's committed document).
+- **The server is being rewritten in Python** (`apps/api`, FastAPI + Supabase JWT auth; see
+  `apps/api/README.md` and `.scratch/zen-api/spec.md`). Once a route lands there it is the only
+  write path for every client (web, extension, Android, iOS); until then the TS routes below still
+  serve it. **`apps/web`'s TypeScript API routes (`app/api/*`) are frozen to bug fixes** for the
+  rest of this rewrite — no new endpoints or fields go there. `apps/web` itself is moving to UI
+  only, calling `apps/api` with the signed-in mind's token.
+- The zen API is the only write path for every client. Every route declares its request and
+  response shapes once — `apps/web/lib/schemas.ts` (zod) for the frozen TS routes, Pydantic models
+  in `apps/api/app` for the Python ones — and validates input with them; `bun run openapi`
+  (`apps/web`) and `uv run scripts/gen_openapi.py` (`apps/api`) regenerate the committed documents
+  from those declarations. **API changes are additive only**: new endpoints and new optional fields
+  are fine; removing or renaming a field, changing a type, or making an optional field required is
+  a breaking change. The committed `apps/web/openapi.json` is the one contract both servers keep;
+  CI refuses a break in either direction (`oasdiff breaking`, with `apps/api/oasdiff-exceptions.md`
+  listing the two reviewed exceptions: the password login route and cookie auth, both retired with
+  local mode).
 
 ## Checks
 
@@ -49,6 +59,11 @@ bun run e2e                                # local mode through the UI (dev serv
 bun run a11y <card-id> <space-id> <token>  # 14 routes × desk/phone × light/dark, axe AA
 bun run e2e:cloud                          # cloud mode: npx supabase start + a cloud build on :3002
 DATABASE_URL=... scripts/check-rls.sh      # fails if a table lacks RLS or has a public policy
+
+cd apps/api && uv run ruff check . && uv run pyright   # Python: lint + types
+uv run uvicorn app.main:app --reload                   # run against a Supabase stack (see apps/api/README.md)
+uv run pytest                                           # HTTP-level tests, against a Supabase stack
+uv run python scripts/check_contract.py                 # staleness + oasdiff breaking (apps/web/openapi.json)
 ```
 
 CI (`.github/workflows/ci.yml`) runs typecheck, lint, unit tests, build, the OpenAPI staleness check and
