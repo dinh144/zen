@@ -1,0 +1,28 @@
+# yaml-language-server: $schema=https://unpkg.com/@powersync/service-schema@latest/json-schema/powersync-config.json
+telemetry:
+  disable_telemetry_sharing: true # local only, never deployed
+
+replication:
+  connections:
+    - type: postgresql
+      uri: !env PS_DATA_SOURCE_URI
+      sslmode: disable
+
+storage:
+  type: postgresql
+  uri: !env PS_STORAGE_SOURCE_URI
+  sslmode: disable
+
+port: !env PS_PORT
+
+sync_config:
+  path: sync-config.yaml
+
+client_auth:
+  # Supabase's local CLI stack issues asymmetric (ES256) signing keys by default (the notice about
+  # projects created after 25/11/2024) — confirmed on this stack: GET
+  # /auth/v1/.well-known/jwks.json returns an ES256 key with no HS256 fallback, matching
+  # apps/api/app/auth.py, which only accepts ES256. PowerSync fetches the public key straight from
+  # this JWKS endpoint; no shared secret is configured anywhere.
+  jwks_uri: !env PS_JWKS_URL
+  audience: ["authenticated"]

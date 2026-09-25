@@ -1,0 +1,16 @@
+{
+  "name": "powersync-verify",
+  "private": true,
+  "type": "module",
+  "description": "Standalone scripted-client check for ticket web-4: signs in as one mind, syncs from the local PowerSync instance, and fails if another mind's rows, an embedding column or a server-only table ever arrive. Not part of the bun workspace on purpose (a one-off Node check, not shipped app code).",
+  "scripts": {
+    "verify": "node verify.mjs"
+  },
+  "dependencies": {
+    "@powersync/node": "^1.1.0",
+    "better-sqlite3": "^12.10.0"
+  },
+  "allowScripts": {
+    "better-sqlite3": true
+  }
+}
