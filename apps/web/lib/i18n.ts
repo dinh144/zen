@@ -514,6 +514,14 @@ export const STRINGS = {
       "そのリンクはもう使えません。もう一度。",
     ],
     out: ["rời đi", "sign out", "로그아웃", "退出登录", "サインアウト"],
+    stagingPassword: ["mật khẩu (staging)", "password (staging)", "비밀번호 (스테이징)", "密码（预发布）", "パスワード（ステージング）"],
+    notAllowed: [
+      "Tài khoản này chưa được cho phép trên máy chủ này.",
+      "This account isn't allowed on this server.",
+      "이 계정은 이 서버에서 허용되지 않아요.",
+      "此帐号未被允许访问此服务器。",
+      "このアカウントはこのサーバーで許可されていません。",
+    ],
   },
   pool: {
     groups: ["nhóm", "groups", "그룹", "分组", "グループ"],

@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js"
+import { allowed } from "./allowlist"
 import { isAuthed, validSession } from "./auth"
 import { json } from "./http"
 import { cloud, supabaseServer } from "./supabase"
@@ -10,7 +11,8 @@ export const LOCAL_USER = "00000000-0000-0000-0000-000000000000"
 export async function currentUser(): Promise<string | null> {
   if (!cloud) return (await isAuthed()) ? LOCAL_USER : null
   const { data } = await (await supabaseServer()).auth.getClaims()
-  return (data?.claims?.sub as string | undefined) ?? null
+  if (!data?.claims || !allowed(data.claims.email as string | undefined)) return null
+  return (data.claims.sub as string | undefined) ?? null
 }
 
 /**
@@ -25,7 +27,8 @@ export async function bearerUser(request: Request): Promise<string | null> {
     auth: { persistSession: false },
   })
   const { data } = await supabase.auth.getClaims(token)
-  return (data?.claims?.sub as string | undefined) ?? null
+  if (!data?.claims || !allowed(data.claims.email as string | undefined)) return null
+  return (data.claims.sub as string | undefined) ?? null
 }
 
 /** An API handler that only runs for a signed-in mind; everyone else gets 401 here, once. */

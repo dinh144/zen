@@ -6,6 +6,7 @@ import { Droplet } from "@/components/droplet"
 import { useDrop } from "@/components/drop-state"
 import { useT } from "@/components/locale"
 import { CLOUD } from "@/lib/cloud"
+import { STAGING } from "@/lib/staging"
 
 
 const FIELD =
@@ -15,6 +16,7 @@ const BUTTON = "text-primary w-fit text-[12px] tracking-[0.25em] lowercase"
 export default function LoginPage() {
   const router = useRouter()
   const [value, setValue] = React.useState("")
+  const [pw, setPw] = React.useState("")
   const [error, setError] = React.useState("")
   const [sent, setSent] = React.useState(false)
   const { ink, feel, rest, mood } = useDrop()
@@ -22,29 +24,39 @@ export default function LoginPage() {
 
   React.useEffect(() => {
     rest("suspicious")
-    if (new URLSearchParams(location.search).get("error")) setError(t("login", "failed"))
+    const err = new URLSearchParams(location.search).get("error")
+    if (err) setError(t("login", err === "allowlist" ? "notAllowed" : "failed"))
   }, [rest, t])
 
   async function submit(event: React.FormEvent) {
     event.preventDefault()
     setError("")
-    const res = CLOUD
-      ? await fetch("/auth/email", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ email: value }),
-        })
-      : await fetch("/api/login", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ password: value }),
-        })
+    // Staging only: a test mind with a password skips the magic link.
+    const res =
+      STAGING && pw
+        ? await fetch("/auth/password", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ email: value, password: pw }),
+          })
+        : CLOUD
+          ? await fetch("/auth/email", {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({ email: value }),
+            })
+          : await fetch("/api/login", {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({ password: value }),
+            })
     if (!res.ok) {
       feel("sad", 3000)
-      return setError(t("login", CLOUD ? "failed" : "wrong"))
+      return setError(t("login", STAGING && pw ? "wrong" : CLOUD ? "failed" : "wrong"))
     }
     feel("excited", 2000)
-    if (CLOUD) setSent(true)
+    if (STAGING && pw) router.push("/")
+    else if (CLOUD) setSent(true)
     else router.push("/")
   }
 
@@ -70,13 +82,25 @@ export default function LoginPage() {
             required
             className={FIELD}
           />
+          {STAGING ? (
+            <input
+              data-ruled
+              type="password"
+              autoComplete="current-password"
+              aria-label={t("login", "password")}
+              value={pw}
+              onChange={(event) => setPw(event.target.value)}
+              placeholder={t("login", "stagingPassword")}
+              className={FIELD}
+            />
+          ) : null}
           {error ? (
             <p className="text-destructive text-sm" role="alert">
               {error}
             </p>
           ) : null}
           <button type="submit" className={BUTTON}>
-            {t("login", CLOUD ? "sendLink" : "enter")}
+            {t("login", STAGING && pw ? "enter" : CLOUD ? "sendLink" : "enter")}
           </button>
           {CLOUD ? (
             <a href="/auth/google" className={`${BUTTON} text-muted-foreground hover:text-primary transition-colors`}>
