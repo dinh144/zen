@@ -7,9 +7,9 @@ import PackageDescription
 let package = Package(
     name: "ZenAPIClient",
     // macOS listed only because `swift test` runs the package's own host (macOS) build —
-    // OpenAPIRuntime/OpenAPIURLSession require macOS 10.15+. The app targets set the real
-    // iOS/watchOS minimums (project.yml's `deploymentTarget`).
-    platforms: [.iOS(.v17), .watchOS(.v10), .macOS(.v13)],
+    // OpenAPIRuntime/OpenAPIURLSession require macOS 10.15+. The Zen app target sets the real
+    // iOS minimum (project.yml's `deploymentTarget`).
+    platforms: [.iOS(.v17), .macOS(.v13)],
     products: [
         .library(name: "ZenAPIClient", targets: ["ZenAPIClient"])
     ],

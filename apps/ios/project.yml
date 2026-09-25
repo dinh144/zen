@@ -124,8 +124,11 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.dinh144.zen.watch
+    # No ZenAPIClient dependency here: the same SPM package target built for two platforms
+    # (iOS via Zen, watchOS via ZenWatch) in one scheme makes Xcode run the OpenAPIGenerator
+    # plugin twice into the same output path ("Multiple commands produce"). The watch reaches
+    # zen through the phone (spec story 180); it doesn't need its own API client yet.
     dependencies:
-      - package: ZenAPIClient
       - target: ZenWatchWidgetExtension
         embed: true
 
