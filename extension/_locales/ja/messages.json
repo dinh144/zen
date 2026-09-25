@@ -1,0 +1,9 @@
+{
+  "dropOpenMenu": { "message": "zen を開く" },
+  "dropMenuMove": { "message": "別の角に移す" },
+  "dropMenuHide": { "message": "このページで隠す" },
+  "dropMenuMute": { "message": "このサイトをミュート" },
+  "popupMutedHeading": { "message": "ミュートしたサイト" },
+  "popupMutedEmpty": { "message": "まだミュートしたサイトはありません" },
+  "popupUnmute": { "message": "ミュート解除" }
+}

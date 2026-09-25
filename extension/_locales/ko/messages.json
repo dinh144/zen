@@ -1,0 +1,9 @@
+{
+  "dropOpenMenu": { "message": "zen 열기" },
+  "dropMenuMove": { "message": "다른 모서리로 옮기기" },
+  "dropMenuHide": { "message": "이 페이지에서 숨기기" },
+  "dropMenuMute": { "message": "이 사이트 음소거" },
+  "popupMutedHeading": { "message": "음소거한 사이트" },
+  "popupMutedEmpty": { "message": "아직 음소거한 사이트가 없어요" },
+  "popupUnmute": { "message": "음소거 해제" }
+}

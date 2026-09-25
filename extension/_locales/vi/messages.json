@@ -1,0 +1,9 @@
+{
+  "dropOpenMenu": { "message": "mở zen" },
+  "dropMenuMove": { "message": "dời sang góc khác" },
+  "dropMenuHide": { "message": "ẩn trên trang này" },
+  "dropMenuMute": { "message": "im lặng trang này" },
+  "popupMutedHeading": { "message": "trang đã im lặng" },
+  "popupMutedEmpty": { "message": "chưa im lặng trang nào" },
+  "popupUnmute": { "message": "bỏ im lặng" }
+}
