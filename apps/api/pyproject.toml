@@ -9,11 +9,13 @@ dependencies = [
   "sqlalchemy[asyncio]>=2.0.36",
   "asyncpg>=0.30",
   "pyjwt[crypto]>=2.9",
+  "pyyaml>=6.0",
+  "sqlglot>=27.0",
 ]
 
 [dependency-groups]
 dev = [
-  "ruff>=0.7",
+  "ruff>=0.8",
   "pyright>=1.1",
   "pytest>=8.3",
   "pytest-asyncio>=0.24",
@@ -28,7 +30,7 @@ target-version = "py312"
 select = ["E", "F", "I", "UP"]
 
 [tool.pyright]
-include = ["app", "scripts", "tests"]
+include = ["app", "zen_api", "scripts", "tests"]
 pythonVersion = "3.12"
 typeCheckingMode = "basic"
 
@@ -38,6 +40,7 @@ asyncio_mode = "auto"
 # an asyncpg connection can't cross event loops.
 asyncio_default_fixture_loop_scope = "session"
 asyncio_default_test_loop_scope = "session"
+pythonpath = ["."]
 testpaths = ["tests"]
 
 [build-system]
@@ -45,4 +48,4 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["app"]
+packages = ["app", "zen_api"]

@@ -28,6 +28,24 @@ read it before touching UI. `README.md` has the run and deploy steps.
   `npx supabase db push --linked`. `db/*.sql` is now a frozen pre-CLI snapshot kept only for the
   Docker local-mode bootstrap (`README.md`); new changes go only in `supabase/migrations/`.
   `scripts/check-rls.sh` must stay green: no table with row-level security disabled or a public policy.
+- Sync-friendly schema (ticket 04, so PowerSync can replicate a table to a mind's phone): give a
+  new table its own `user_id` column — PowerSync's sync rules cannot `JOIN`, so a data query
+  must scope by a column on the one table it reads; if the mind is only reachable through a
+  parent row (a join table like `card_spaces`), add `user_id` anyway and a `BEFORE INSERT`
+  trigger that stamps it from the parent (see `zen_stamp_card_spaces_owner()` for the pattern),
+  and give the table an explicit column list on every `INSERT` so a later added column never
+  shifts a positional `VALUES` (`card_clusters`' inserts had to be fixed for exactly this).
+  If it has an `updated_at` that a partial-field `UPDATE` can touch, attach the existing
+  `zen_touch_updated_at()` trigger (`CREATE TRIGGER touch_updated_at BEFORE UPDATE ON <table> FOR
+  EACH ROW EXECUTE FUNCTION zen_touch_updated_at();`) so it stays current no matter which write
+  path touches the row; skip it for insert/delete-only tables (nothing ever updates a field).
+  Keep `deleted_at` only where the table is actually soft-deleted, like `cards`; a hard-deleted
+  row (`spaces`, join tables) replicates its own removal through Postgres's normal delete
+  replication, no marker needed. Then add the table to `apps/api/sync-rules.yaml` if a screen
+  shows it — for a table with no single-column primary key (a join table), alias a
+  concatenation of its key columns as `id` in the `SELECT` instead of adding a surrogate column
+  (PowerSync's own pattern for this). `apps/api/tests/test_sync_rules.py` fails the build if that
+  file ends up naming a table or column the schema does not have.
 - UI strings are `[vi, en]` pairs in `lib/i18n.ts`, never literals; use `useT()` or `<Pair>` from server
   components. Text colour tokens must clear AA (inks go through `INK_TEXT`).
 - Motion collapses under `prefers-reduced-motion`; text fields show focus by inking their line
@@ -60,9 +78,8 @@ bun run a11y <card-id> <space-id> <token>  # 14 routes × desk/phone × light/da
 bun run e2e:cloud                          # cloud mode: npx supabase start + a cloud build on :3002
 DATABASE_URL=... scripts/check-rls.sh      # fails if a table lacks RLS or has a public policy
 
-cd apps/api && uv run ruff check . && uv run pyright   # Python: lint + types
+cd apps/api && uv run ruff check . && uv run pyright && uv run pytest   # Python: lint + types + tests
 uv run uvicorn app.main:app --reload                   # run against a Supabase stack (see apps/api/README.md)
-uv run pytest                                           # HTTP-level tests, against a Supabase stack
 uv run python scripts/check_contract.py                 # staleness + oasdiff breaking (apps/web/openapi.json)
 ```
 

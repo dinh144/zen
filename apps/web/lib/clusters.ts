@@ -86,12 +86,14 @@ export async function recluster(me: string) {
     for (const [spaceId, { name, ids }] of pinned) {
       const [row] = await tx<{ id: string }[]>`
         INSERT INTO clusters (user_id, name, space_id) VALUES (${me}, ${name}, ${spaceId}) RETURNING id`
-      for (const id of ids) await tx`INSERT INTO card_clusters VALUES (${id}, ${row!.id})`
+      for (const id of ids)
+        await tx`INSERT INTO card_clusters (card_id, cluster_id) VALUES (${id}, ${row!.id})`
     }
     for (const [index, ids] of machine.entries()) {
       const [row] = await tx<{ id: string }[]>`
         INSERT INTO clusters (user_id, name) VALUES (${me}, ${names[index] ?? null}) RETURNING id`
-      for (const id of ids) await tx`INSERT INTO card_clusters VALUES (${id}, ${row!.id})`
+      for (const id of ids)
+        await tx`INSERT INTO card_clusters (card_id, cluster_id) VALUES (${id}, ${row!.id})`
     }
     await tx`INSERT INTO agent_log (user_id, action, summary)
       VALUES (${me}, 'recluster', ${`gom ${machine.length} cụm, giữ ${pinned.size} không gian`})`
