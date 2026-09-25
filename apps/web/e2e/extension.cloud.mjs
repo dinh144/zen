@@ -35,6 +35,9 @@ await withExtension("cloud", async ({ ctx, extId, headless, seenHosts, swEvaluat
 
   await runSignedInChecks({ ok, ctx, extId, swEvaluate, B, FX, stamp, api, cards })
 
+  // The resting drop (runBubbleChecks) makes no zen call at all — covered once in extension.mjs,
+  // not repeated here.
+
   // The magic-link sign-in itself legitimately visits Supabase's own auth server mid-redirect;
   // that's zen's sign-in, not the extension writing anywhere.
   const supabaseOrigin = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "http://127.0.0.1:54321").origin

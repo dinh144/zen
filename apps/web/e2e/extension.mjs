@@ -1,4 +1,12 @@
-import { createReporter, withExtension, zenClient, checkSignedOutState, runSignedInChecks, assertOnlyZenTraffic } from "./extension-harness.mjs"
+import {
+  createReporter,
+  withExtension,
+  zenClient,
+  checkSignedOutState,
+  runSignedInChecks,
+  runBubbleChecks,
+  assertOnlyZenTraffic,
+} from "./extension-harness.mjs"
 
 // Local mode: the unpacked extension in a real Chromium, against fixture pages served by this
 // test and a real zen dev server. Sign-in state, the session cookie, cache-clearing on 401, and
@@ -42,6 +50,10 @@ await withExtension("local", async ({ ctx, extId, headless, seenHosts, swEvaluat
   } else {
     skip("signed-in flows (popup save, command, right-click saves)", "no working ZEN_PASSWORD sign-in")
   }
+
+  // The resting drop makes no zen call at all (chrome.storage only) — run once here, not
+  // repeated in extension.cloud.mjs.
+  await runBubbleChecks({ ok, ctx, extId, swEvaluate, FX })
 
   assertOnlyZenTraffic({ ok, seenHosts, B, allowed: [B, FX, `chrome-extension://${extId}`] })
 })
