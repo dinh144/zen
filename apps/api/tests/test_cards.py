@@ -34,6 +34,7 @@ async def test_only_http_and_https_addresses_are_accepted_as_links(client: httpx
     card = r.json()["card"]
     assert card["url"] is None
     assert card["domain"] is None
+    assert card["kind"] == "note"
 
 
 async def test_each_new_card_spends_the_daily_cap_first(client: httpx.AsyncClient, mind_a: Mind, monkeypatch):

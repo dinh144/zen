@@ -110,7 +110,7 @@ async def create_card(
         raise HTTPException(status_code=429, detail={"error": "daily limit"})
 
     url, domain = _link(body.url)
-    kind = body.kind or ("quote" if body.quote else "link" if body.url else "note")
+    kind = body.kind or ("quote" if body.quote else "link" if url else "note")
     content = body.quote if body.quote is not None else body.content
     meta = {"quote": body.quote, "source": body.url} if body.quote else {}
 
