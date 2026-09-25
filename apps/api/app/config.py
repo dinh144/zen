@@ -6,3 +6,6 @@ SUPABASE_URL = os.environ["SUPABASE_URL"].rstrip("/")
 
 # Direct connection to Postgres (the API runs as the table owner, bypassing RLS, like the TS server).
 DATABASE_URL = os.environ["DATABASE_URL"]
+
+# Daily cards a mind may create; each new card spends one before it is stored.
+DAILY_CARDS = int(os.environ.get("ZEN_DAILY_CARDS", "500"))

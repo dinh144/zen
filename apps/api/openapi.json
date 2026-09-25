@@ -33,16 +33,12 @@
             "in": "query",
             "required": false,
             "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                {
-                  "type": "null"
-                }
+              "title": "After",
+              "type": [
+                "string",
+                "null"
               ],
-              "title": "After"
+              "format": "uuid"
             }
           }
         ],
@@ -68,11 +64,214 @@
             }
           }
         }
+      },
+      "post": {
+        "summary": "Create Card",
+        "description": "Capture returns the saved card at once, with no model call; enrichment (tags, embedding,\nthe daily mark unlocks) is a background job from a later ticket.",
+        "operationId": "create_card_api_cards_post",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CardInput",
+                "default": {}
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CardResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/cards/{id}": {
+      "patch": {
+        "summary": "Edit Card",
+        "description": "Edit, pin, mark seen, restore, or set the resurfacing date; only the fields the request set\nare touched.",
+        "operationId": "edit_card_api_cards__id__patch",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CardPatch",
+                "default": {}
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CardResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Let Card Go",
+        "description": "A soft delete: `PATCH` with `restore: true` brings the card back as it was.",
+        "operationId": "let_card_go_api_cards__id__delete",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ok"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/cards/{id}/article": {
+      "get": {
+        "summary": "Read Article",
+        "description": "Reading Mode's saved copy of a card this mind owns, sanitised again on every read (the\nsame defence-in-depth the TypeScript server applies) rather than trusted from storage alone.",
+        "operationId": "read_article_api_cards__id__article_get",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Article"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     }
   },
   "components": {
     "schemas": {
+      "Article": {
+        "properties": {
+          "article_html": {
+            "type": "string",
+            "title": "Article Html"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "article_html"
+        ],
+        "title": "Article",
+        "description": "Reading Mode's saved copy, sanitised again on every read (defence in depth)."
+      },
       "Card": {
         "properties": {
           "id": {
@@ -225,6 +424,183 @@
         "title": "Card",
         "description": "A saved card: a note, link, image or other kind of memory."
       },
+      "CardInput": {
+        "properties": {
+          "url": {
+            "title": "Url",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "note": {
+            "title": "Note",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "title": {
+            "title": "Title",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "kind": {
+            "title": "Kind",
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "note",
+              "quote",
+              "link",
+              "article",
+              "image",
+              "video",
+              "product",
+              "book",
+              "movie",
+              "recipe",
+              "tweet",
+              "person",
+              "color",
+              "font",
+              "pdf",
+              "file"
+            ]
+          },
+          "quote": {
+            "title": "Quote",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "content": {
+            "title": "Content",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "CardInput",
+        "description": "A new card: give a url, a note, a quote, or any mix."
+      },
+      "CardPatch": {
+        "properties": {
+          "kind": {
+            "title": "Kind",
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "note",
+              "quote",
+              "link",
+              "article",
+              "image",
+              "video",
+              "product",
+              "book",
+              "movie",
+              "recipe",
+              "tweet",
+              "person",
+              "color",
+              "font",
+              "pdf",
+              "file"
+            ]
+          },
+          "title": {
+            "title": "Title",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "note": {
+            "title": "Note",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "colors": {
+            "title": "Colors",
+            "items": {
+              "type": "string"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "tags": {
+            "title": "Tags",
+            "items": {
+              "type": "string",
+              "maxLength": 60
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "pinned": {
+            "title": "Pinned",
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "seen": {
+            "title": "Seen",
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "restore": {
+            "title": "Restore",
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "resurface": {
+            "title": "Resurface",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "CardPatch",
+        "description": "A partial edit: only the fields present in the request are changed."
+      },
+      "CardResponse": {
+        "properties": {
+          "card": {
+            "$ref": "#/components/schemas/Card"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "card"
+        ],
+        "title": "CardResponse"
+      },
       "CardsList": {
         "properties": {
           "cards": {
@@ -254,6 +630,21 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "Ok": {
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "const": true,
+            "title": "Ok"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "ok"
+        ],
+        "title": "Ok"
       },
       "ValidationError": {
         "properties": {

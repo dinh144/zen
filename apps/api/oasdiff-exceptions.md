@@ -5,4 +5,7 @@ Two removals the Python API makes on purpose, both retired with local mode (spec
 bearer tokens). Reviewed 2026-09-25, ticket api-2.
 
 - GET /cards the endpoint scheme security `cookieAuth` was removed from the API
+- POST /cards the endpoint scheme security `cookieAuth` was removed from the API
+- PATCH /cards/{id} the endpoint scheme security `cookieAuth` was removed from the API
+- DELETE /cards/{id} the endpoint scheme security `cookieAuth` was removed from the API
 - POST /login api removed without deprecation
