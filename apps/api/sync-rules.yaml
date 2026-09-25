@@ -1,0 +1,62 @@
+# PowerSync sync rules (ticket 04). One bucket per mind, keyed by the Supabase access
+# token's subject. Every table a screen reads today is here, minus what apps/api/zen_api's
+# sync-rules test checks the schema does not have: embeddings, the usage table (a counter,
+# not a screen), and any device-token/checkpoint table (neither exists yet).
+#
+# Conventions for a new synced table (see CLAUDE.md "Sync-friendly schema"):
+#   - scope it to the mind, directly by user_id or by joining to a table that has one;
+#   - if it has no single-column primary key, alias a concatenation of its key columns as
+#     `id` in the data query below (PowerSync's own pattern for join tables) rather than
+#     adding a surrogate id column;
+#   - add it to this file, in the same migration that adds the table.
+bucket_definitions:
+  by_mind:
+    parameters: SELECT request.user_id() as user_id
+    data:
+      - SELECT id, kind, title, url, domain, note, content, image_path, meta, colors, tags,
+          enriched_at, pinned_at, article_html, seen_at, resurface_at, extracted_at,
+          extract_version, created_at, updated_at, deleted_at
+        FROM cards WHERE user_id = bucket.user_id
+
+      - SELECT id, name, share_token, query, parent_id, created_at, updated_at
+        FROM spaces WHERE user_id = bucket.user_id
+
+      - SELECT cs.card_id || ':' || cs.space_id as id, cs.card_id, cs.space_id
+        FROM card_spaces cs JOIN cards c ON c.id = cs.card_id
+        WHERE c.user_id = bucket.user_id
+
+      - SELECT cl.from_id || ':' || cl.to_id as id, cl.from_id, cl.to_id
+        FROM card_links cl JOIN cards c ON c.id = cl.from_id
+        WHERE c.user_id = bucket.user_id
+
+      - SELECT user_id || ':' || key as id, key, unlocked_at
+        FROM achievements WHERE user_id = bucket.user_id
+
+      - SELECT id, name, type, description, summary, key_facts, created_at, updated_at
+        FROM entities WHERE user_id = bucket.user_id
+
+      - SELECT id, source_id, target_id, predicate, card_id, created_at
+        FROM relations WHERE user_id = bucket.user_id
+
+      - SELECT ce.card_id || ':' || ce.entity_id as id, ce.card_id, ce.entity_id
+        FROM card_entities ce JOIN cards c ON c.id = ce.card_id
+        WHERE c.user_id = bucket.user_id
+
+      - SELECT id, name, space_id, summary, created_at
+        FROM clusters WHERE user_id = bucket.user_id
+
+      - SELECT cc.card_id || ':' || cc.cluster_id as id, cc.card_id, cc.cluster_id
+        FROM card_clusters cc JOIN clusters cl ON cl.id = cc.cluster_id
+        WHERE cl.user_id = bucket.user_id
+
+      - SELECT id, action, summary, undo, created_at, updated_at, undone_at
+        FROM agent_log WHERE user_id = bucket.user_id
+
+      - SELECT id, question, answer, created_at
+        FROM agent_rules WHERE user_id = bucket.user_id
+
+      - SELECT id, topic, question, options, answer, asked_at, answered_at, updated_at
+        FROM agent_questions WHERE user_id = bucket.user_id
+
+      - SELECT user_id as id, user_id, locale, updated_at
+        FROM user_settings WHERE user_id = bucket.user_id

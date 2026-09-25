@@ -1,0 +1,33 @@
+[project]
+name = "zen-api"
+version = "0.1.0"
+description = "zen's Python API lane (FastAPI skeleton: ticket 02; this much is ticket 04's sync rules)."
+requires-python = ">=3.12"
+dependencies = [
+    "pyyaml>=6.0",
+    "sqlglot>=27.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.8",
+    "pyright>=1.1",
+]
+
+[tool.uv]
+package = false
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
+
+[tool.pyright]
+include = ["zen_api", "tests"]
+typeCheckingMode = "basic"
+pythonVersion = "3.12"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
