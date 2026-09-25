@@ -1,0 +1,148 @@
+# Committed XcodeGen spec — the source of truth (ticket 01: zen-ios/01). Regenerate the
+# .xcodeproj on any machine with `cd apps/ios && xcodegen generate` (CI does this before
+# building, since this machine has no Xcode to run locally).
+name: Zen
+options:
+  createIntermediateGroups: true
+  deploymentTarget:
+    iOS: "26.0"
+    watchOS: "26.0"
+  # XcodeGen (as of 2.45.3, https://github.com/yonaskolb/XcodeGen/issues/1613) still embeds a
+  # watchOS app target's "Embed Watch Content" copy phase at dstSubfolderSpec 16 ("Watch"
+  # directory), which Xcode 26 rejects — the phone app on Xcode 26 requires watchOS apps in
+  # PlugIns/ (dstSubfolderSpec 13), like any other extension. Patch it post-generation until
+  # XcodeGen ships the fix (PR #1614).
+  postGenCommand: |
+    sed -i '' \
+      -e 's|dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";|dstPath = "";|' \
+      -e 's|dstSubfolderSpec = 16;|dstSubfolderSpec = 13;|' \
+      Zen.xcodeproj/project.pbxproj
+settings:
+  base:
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    SWIFT_VERSION: "6.0"
+    # Unsigned builds: this ticket only needs a simulator build, unit tests and the Maestro
+    # smoke flow in CI. Ticket 34 (archive in CI without signing) revisits signing for TestFlight.
+    CODE_SIGNING_ALLOWED: NO
+    CODE_SIGNING_REQUIRED: NO
+    CODE_SIGN_IDENTITY: ""
+
+packages:
+  ZenAPIClient:
+    path: ZenAPIClient
+
+targets:
+  Zen:
+    type: application
+    platform: iOS
+    sources: [Zen]
+    info:
+      path: Zen/Info.plist
+      properties:
+        CFBundleDisplayName: zen
+        UILaunchScreen: {}
+    entitlements:
+      path: Zen/Zen.entitlements
+      properties:
+        com.apple.security.application-groups: [group.com.dinh144.zen]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.dinh144.zen
+    dependencies:
+      - package: ZenAPIClient
+      - target: ZenShareExtension
+        embed: true
+      - target: ZenWidgetExtension
+        embed: true
+      - target: ZenWatch
+        embed: true
+    prebuildScripts:
+      - name: Generate string catalog
+        # Mirrors apps/android's generateStrings Gradle task: regenerates the five-locale
+        # catalog from apps/web/lib/i18n.ts on every build (ticket AC: "a build step generates
+        # the string catalog").
+        script: |
+          cd "$SRCROOT/../.."
+          bun scripts/generate-ios-strings.ts
+        outputFiles:
+          - $(SRCROOT)/build/generated-strings/Localizable.xcstrings
+
+  ZenShareExtension:
+    type: app-extension
+    platform: iOS
+    sources: [ZenShareExtension]
+    info:
+      path: ZenShareExtension/Info.plist
+      properties:
+        CFBundleDisplayName: zen
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.share-services
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ShareViewController
+          NSExtensionAttributes:
+            NSExtensionActivationRule: TRUEPREDICATE
+    entitlements:
+      path: ZenShareExtension/ZenShareExtension.entitlements
+      properties:
+        com.apple.security.application-groups: [group.com.dinh144.zen]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.dinh144.zen.share
+
+  ZenWidgetExtension:
+    type: app-extension
+    platform: iOS
+    sources: [ZenWidgetExtension]
+    info:
+      path: ZenWidgetExtension/Info.plist
+      properties:
+        CFBundleDisplayName: zen
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    entitlements:
+      path: ZenWidgetExtension/ZenWidgetExtension.entitlements
+      properties:
+        com.apple.security.application-groups: [group.com.dinh144.zen]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.dinh144.zen.widget
+
+  ZenWatch:
+    type: application
+    platform: watchOS
+    sources: [ZenWatch]
+    info:
+      path: ZenWatch/Info.plist
+      properties:
+        CFBundleDisplayName: zen
+        WKApplication: true
+        WKCompanionAppBundleIdentifier: com.dinh144.zen
+    entitlements:
+      path: ZenWatch/ZenWatch.entitlements
+      properties:
+        com.apple.security.application-groups: [group.com.dinh144.zen]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.dinh144.zen.watch
+    dependencies:
+      - package: ZenAPIClient
+      - target: ZenWatchWidgetExtension
+        embed: true
+
+  ZenWatchWidgetExtension:
+    type: app-extension
+    platform: watchOS
+    sources: [ZenWatchWidgetExtension]
+    info:
+      path: ZenWatchWidgetExtension/Info.plist
+      properties:
+        CFBundleDisplayName: zen
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    entitlements:
+      path: ZenWatchWidgetExtension/ZenWatchWidgetExtension.entitlements
+      properties:
+        com.apple.security.application-groups: [group.com.dinh144.zen]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.dinh144.zen.watch.widget

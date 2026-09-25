@@ -62,3 +62,10 @@ graphify-out/
 local.properties
 .idea/
 *.iml
+
+# ios
+apps/ios/*.xcodeproj
+apps/ios/ZenAPIClient/.build/
+apps/ios/ZenAPIClient/.swiftpm/
+.swiftpm/
+DerivedData/

@@ -1,7 +1,7 @@
 # Shared Maestro flows
 
-One flow set for both mobile apps (Android now, iOS later — spec `.scratch/zen-android/spec.md`,
-Testing Decisions, Seam 1). A flow is written once here and runs unchanged on either app.
+One flow set for both mobile apps (spec `.scratch/zen-android/spec.md`, Testing Decisions,
+Seam 1). A flow is written once here and runs unchanged on either app.
 
 Run against the Android app on the `pixel_api36` emulator:
 
@@ -19,7 +19,8 @@ with the `id:` selector, which Maestro maps to the platform's own technical iden
   the root composable in `Modifier.semantics { testTagsAsResourceId = true }` (done in
   `apps/android/app/src/main/kotlin/com/dinh144/zen/MainActivity.kt`) so every `testTag` below it
   is exposed as an Android resource-id.
-- **iOS (SwiftUI, when that lane starts):** `.accessibilityIdentifier("screen.element")`.
+- **iOS (SwiftUI):** `.accessibilityIdentifier("screen.element")` on the element (done for
+  `signin.screen`/`signin.google` in `apps/ios/Zen/SignInScreen.swift`).
 
 Never select on visible text alone when an id is available — text changes per locale and per mood
 copy; the id does not.
