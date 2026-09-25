@@ -1,0 +1,312 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "zen API",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/cards": {
+      "get": {
+        "summary": "List Cards",
+        "description": "The mind's board, newest first. `after` is the id of the last card already seen: its own\n(created_at, id) is the cursor, so equal timestamps never skip or repeat a card.",
+        "operationId": "list_cards_api_cards_get",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "exclusiveMinimum": 0,
+              "default": 60,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "after",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "After"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CardsList"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Card": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "note",
+              "quote",
+              "link",
+              "article",
+              "image",
+              "video",
+              "product",
+              "book",
+              "movie",
+              "recipe",
+              "tweet",
+              "person",
+              "color",
+              "font",
+              "pdf",
+              "file"
+            ],
+            "title": "Kind"
+          },
+          "title": {
+            "title": "Title",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "url": {
+            "title": "Url",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "domain": {
+            "title": "Domain",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "note": {
+            "title": "Note",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "content": {
+            "title": "Content",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "image_path": {
+            "title": "Image Path",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "meta": {
+            "additionalProperties": true,
+            "propertyNames": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Meta"
+          },
+          "colors": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Colors"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tags"
+          },
+          "has_article": {
+            "type": "boolean",
+            "title": "Has Article"
+          },
+          "pinned_at": {
+            "title": "Pinned At",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "seen_at": {
+            "title": "Seen At",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "enriched_at": {
+            "title": "Enriched At",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "title": "Updated At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "kind",
+          "title",
+          "url",
+          "domain",
+          "note",
+          "content",
+          "image_path",
+          "meta",
+          "colors",
+          "tags",
+          "has_article",
+          "pinned_at",
+          "seen_at",
+          "enriched_at",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "Card",
+        "description": "A saved card: a note, link, image or other kind of memory."
+      },
+      "CardsList": {
+        "properties": {
+          "cards": {
+            "items": {
+              "$ref": "#/components/schemas/Card"
+            },
+            "type": "array",
+            "title": "Cards"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "cards"
+        ],
+        "title": "CardsList"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "A Supabase access token, verified against the project's published signing keys."
+      }
+    }
+  },
+  "servers": [
+    {
+      "url": "/api"
+    }
+  ]
+}

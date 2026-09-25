@@ -62,3 +62,10 @@ graphify-out/
 local.properties
 .idea/
 *.iml
+
+# python (apps/api)
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
